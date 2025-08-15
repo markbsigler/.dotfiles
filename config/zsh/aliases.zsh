@@ -271,7 +271,10 @@ fi
 
 # GitHub CLI (if available)
 if command -v gh &> /dev/null; then
-    eval "$(gh copilot alias -- zsh)"
+    # Only setup copilot aliases if the extension is installed
+    if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
+        eval "$(gh copilot alias -- zsh)"
+    fi
 fi
 
 # Quick server
