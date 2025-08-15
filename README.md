@@ -39,6 +39,14 @@ A comprehensive, portable .dotfiles setup that works seamlessly across macOS and
 
 #### Option A: Fork for Personal Use (Recommended)
 
+**Using GitHub CLI (Easiest):**
+```bash
+# Fork and clone in one command
+gh repo fork markbsigler/.dotfiles --clone --default-branch-only ~/.dotfiles
+cd ~/.dotfiles
+```
+
+**Using GitHub Web Interface:**
 1. Fork this repository on GitHub to create your own copy
 2. Clone your forked repository:
 
@@ -58,10 +66,15 @@ git clone https://github.com/markbsigler/.dotfiles ~/.dotfiles
 cd ~/.dotfiles && make install
 ```
 
-### One-Line Installation (Fork First!)
+### One-Line Installation
 
-After forking the repository to your GitHub account:
+**Using GitHub CLI (Recommended):**
+```bash
+# Fork, clone, and install in one command
+gh repo fork markbsigler/.dotfiles --clone --default-branch-only ~/.dotfiles && cd ~/.dotfiles && make install
+```
 
+**After manual fork on GitHub:**
 ```bash
 # Replace YOURUSERNAME with your actual GitHub username
 git clone https://github.com/YOURUSERNAME/.dotfiles ~/.dotfiles && cd ~/.dotfiles && make install
@@ -113,13 +126,15 @@ After forking and installing:
 To get new features from the original repository:
 
 ```bash
-# Add upstream remote (one time setup)
+# Add upstream remote (one time setup - not needed if you used gh repo fork)
 git remote add upstream https://github.com/markbsigler/.dotfiles.git
 
 # Update from upstream
 git fetch upstream
 git merge upstream/main
 ```
+
+> **Note**: If you used `gh repo fork`, the upstream remote is already configured automatically!
 
 ## 📋 System Support
 
