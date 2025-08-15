@@ -1,15 +1,10 @@
 # ~/.zshrc - Main configuration file
 
+# Prevent double-loading
+export ZSHRC_LOADED=1
+
 # Skip insecure directory warnings (common on Linux with mixed ownership)
 export ZSH_DISABLE_COMPFIX=true
-
-# XDG Base Directory specification
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CACHE_HOME="$HOME/.cache"
-
-# Zsh configuration directory
-export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 
 # History configuration
 export HISTFILE="$XDG_DATA_HOME/zsh/history"
@@ -50,6 +45,26 @@ setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 for config in "$ZDOTDIR"/{os-detection,exports,package-manager,prompt,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
     [[ -r "$config" ]] && source "$config"
 done
+
+# Package manager environment setup (after os-detection is loaded)
+if is_macos; then
+    # macOS - Homebrew is the standard package manager
+    if [[ -x "/opt/homebrew/bin/brew" ]]; then
+        # Apple Silicon macOS
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x "/usr/local/bin/brew" ]]; then
+        # Intel macOS
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+elif is_linux; then
+    # Linux - Native package managers don't need shellenv setup
+    # Only set up Homebrew if explicitly installed by user
+    if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
+        eval "$($HOME/.linuxbrew/bin/brew shellenv)"
+    fi
+fi
 
 # Initialize completions (after all config loaded)
 autoload -Uz compinit
