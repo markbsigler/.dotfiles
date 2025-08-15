@@ -315,8 +315,10 @@ status:
 		echo "$(YELLOW)Working Tree Status:$(NC)"; \
 		if git status --porcelain | grep -q .; then \
 			git status --porcelain | head -5; \
-			if [ $$(git status --porcelain | wc -l) -gt 5 ]; then \
-				echo "... and $$(expr $$(git status --porcelain | wc -l) - 5) more files"; \
+			file_count=$$(git status --porcelain | wc -l); \
+			if [ "$$file_count" -gt 5 ]; then \
+				remaining=$$(( $$file_count - 5 )); \
+				echo "... and $$remaining more files"; \
 			fi; \
 		else \
 			echo "✅ Working tree is clean"; \
