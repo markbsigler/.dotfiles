@@ -170,6 +170,7 @@ install_packages_macos() {
         "curl"
         "wget"
         "httpie"
+        "shellcheck"
     )
     
     # Shell enhancements
@@ -287,6 +288,7 @@ install_packages_ubuntu() {
         "ruby-dev"
         "openjdk-11-jdk"
         "golang-go"
+        "shellcheck"
     )
     
     # CLI tools available in apt
