@@ -1,36 +1,37 @@
-# Detect if a Nerd Font is installed (checks for FiraCode Nerd Font by default)
+# Detect if a Nerd Font is installed (checks for Agave Nerd Font by default)
 has_nerd_font() {
     fc-list | grep -i "Nerd Font" | grep -q "FiraCode" && return 0
     return 1
 }
 
-# Install Nerd Font (FiraCode) on macOS using Homebrew
+# Install Nerd Font (Agave) on macOS using Homebrew
 install_nerd_font_macos() {
-    if has_nerd_font; then
-        success "Nerd Font (FiraCode) is already installed."
+    # Check if Agave Nerd Font is already installed
+    if [[ $(brew list --cask 2>/dev/null | grep -c font-agave-nerd-font) -eq 1 ]]; then
+        success "Nerd Font (Agave) is already installed."
         return 0
     fi
-    info "Installing FiraCode Nerd Font via Homebrew..."
+    info "Installing Agave Nerd Font via Homebrew..."
     brew tap homebrew/cask-fonts
-    brew install --cask font-firacode-nerd-font
-    success "FiraCode Nerd Font installed! Please set it in your terminal preferences."
+    brew install --cask font-agave-nerd-font
+    success "Agave Nerd Font installed! Please set it in your terminal preferences."
 }
 
-# Install Nerd Font (FiraCode) on Linux (downloads from GitHub)
+# Install Nerd Font (Agave) on Linux (downloads from GitHub)
 install_nerd_font_linux() {
     if has_nerd_font; then
-        success "Nerd Font (FiraCode) is already installed."
+        success "Nerd Font (Agave) is already installed."
         return 0
     fi
-    info "Installing FiraCode Nerd Font..."
+    info "Installing Agave Nerd Font..."
     local version="3.1.1"
-    local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${version}/FiraCode.zip"
+    local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${version}/Agave.zip"
     mkdir -p ~/.local/share/fonts
-    wget -O /tmp/FiraCode.zip "$url"
-    unzip -o /tmp/FiraCode.zip -d ~/.local/share/fonts/FiraCodeNerdFont
+    wget -O /tmp/Agave.zip "$url"
+    unzip -o /tmp/Agave.zip -d ~/.local/share/fonts/AgaveNerdFont
     fc-cache -fv
-    rm /tmp/FiraCode.zip
-    success "FiraCode Nerd Font installed! Please set it in your terminal preferences."
+    rm /tmp/Agave.zip
+    success "Agave Nerd Font installed! Please set it in your terminal preferences."
 }
 #!/usr/bin/env bash
 # Cross-platform package installation script
@@ -325,7 +326,7 @@ install_packages_ubuntu() {
     
     success "Ubuntu package installation completed!"
 install_nerd_font_windows() {
-    warning "Please manually install a Nerd Font (e.g., FiraCode Nerd Font) from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences."
+    warning "Please manually install a Nerd Font (e.g., Agave Nerd Font) from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences."
 }
 }
 

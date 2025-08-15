@@ -102,7 +102,7 @@ help:
 install:
 	@echo "$(GREEN)Installing .dotfiles for $(OS_NAME)...$(NC)"
 	@./install.sh
-	@echo "$(YELLOW)If you see '?' instead of icons, run 'make fonts' and set your terminal font to FiraCode Nerd Font.$(NC)"
+	@echo "$(YELLOW)If you see '?' instead of icons, run 'make fonts' and set your terminal font to Agave Nerd Font.$(NC)"
 
 ## Preview installation without making changes
 install-dry:
