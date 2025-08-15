@@ -1,0 +1,476 @@
+" =============================================================================
+" .VIMRC CONFIGURATION
+" =============================================================================
+" --- Shared Vim/Neovim Configuration ---
+
+" If this is Neovim, adjust runtimepath to include Vim's standard directories
+if has('nvim')
+    " Prepend ~/.vim to runtimepath to find old Vim plugins
+    set runtimepath^=~/.vim
+    " Also add ~/.vim/after if you use it for after-plugins
+    set runtimepath+=~/.vim/after
+    " Ensure packpath is consistent with runtimepath (important for 'pack' plugins)
+    let &packpath = &runtimepath
+
+    " Enable true color if your terminal supports it (Neovide handles this automatically)
+    " This is good for consistency if you also use terminal nvim
+    if has('termguicolors')
+        set termguicolors
+    endif
+endif
+
+" -----------------------------------------------------------------------------
+" BASIC SETTINGS
+" -----------------------------------------------------------------------------
+set nocompatible              " Use Vim defaults instead of Vi compatibility
+set encoding=utf-8            " Set default encoding
+set fileencoding=utf-8        " Set file encoding
+
+" Performance optimization for faster startup
+if !has('gui_running')
+  set t_Co=256
+endif
+
+" Set font
+if has("mac")
+    set guifont=Menlo:h14
+elseif has("win32")
+    set guifont=Consolas:h14
+else
+    set guifont=DejaVu\ Sans\ Mono:h14
+endif
+
+" Color scheme with fallback
+try
+    colorscheme gruvbox
+catch
+    try
+        colorscheme desert
+    catch
+        colorscheme default
+    endtry
+endtry
+
+" Enable syntax highlighting
+if has('syntax') && !exists('g:syntax_on')
+  syntax enable
+endif
+
+" Enable file type detection and plugins
+filetype on
+filetype plugin on
+filetype indent on
+
+" -----------------------------------------------------------------------------
+" DISPLAY SETTINGS
+" -----------------------------------------------------------------------------
+set number                    " Show line numbers
+set relativenumber            " Show relative line numbers
+set ruler                     " Show cursor position in status line
+set showcmd                   " Show command in bottom bar
+set showmatch                 " Highlight matching brackets
+set cursorline                " Highlight current line
+set laststatus=2              " Always show status line
+set nowrap                    " No line wrapping
+set scrolloff=3               " Space between cursor and terminal bottom
+set sidescrolloff=3           " Space between cursor and terminal side
+set signcolumn=yes            " Always show sign column
+
+" -----------------------------------------------------------------------------
+" SEARCH SETTINGS
+" -----------------------------------------------------------------------------
+set hlsearch                  " Highlight search results
+set incsearch                 " Incremental search
+set ignorecase                " Case insensitive search
+set smartcase                 " Case sensitive if uppercase used
+
+" -----------------------------------------------------------------------------
+" INDENTATION AND FORMATTING
+" -----------------------------------------------------------------------------
+set tabstop=2                 " Tab width
+set shiftwidth=2              " Indent width
+set expandtab                 " Use spaces instead of tabs
+set smarttab                  " Smart tab handling
+set autoindent                " Auto indent
+set smartindent               " Smart indenting
+set cindent                   " C-style indenting
+
+" Format options
+set formatoptions=tcqrn1
+set comments=sr:/*,mb:\ *,el:\ */,://,b:#,:%,:XCOMM,n:>,fb:-
+
+" -----------------------------------------------------------------------------
+" EDITING BEHAVIOR
+" -----------------------------------------------------------------------------
+set backspace=indent,eol,start " Allow backspace over everything in insert mode
+set undolevels=1500           " How many times the user can undo
+set autoread                  " Reload files changed outside vim
+set hidden                    " Allow buffer switching without saving
+set mouse=a                   " Enable mouse support
+set clipboard=unnamed         " Use system clipboard
+
+" -----------------------------------------------------------------------------
+" COMMAND LINE COMPLETION
+" -----------------------------------------------------------------------------
+set wildmenu                  " Enhanced command completion
+set wildmode=list:longest,full " Command completion mode
+set wildignore=*.o,*.pyc,*.swp,*.tmp " Ignore these files
+
+" -----------------------------------------------------------------------------
+" PERFORMANCE SETTINGS
+" -----------------------------------------------------------------------------
+set lazyredraw                " Don't redraw during macros
+set ttyfast                   " Faster terminal connection
+set updatetime=300            " Faster completion
+
+" -----------------------------------------------------------------------------
+" BACKUP AND SWAP FILES (Improved Strategy)
+" -----------------------------------------------------------------------------
+" Create backup directories if they don't exist
+if !isdirectory($HOME.'/.vim/backup')
+    call mkdir($HOME.'/.vim/backup', 'p')
+endif
+if !isdirectory($HOME.'/.vim/swap')
+    call mkdir($HOME.'/.vim/swap', 'p')
+endif
+if !isdirectory($HOME.'/.vim/undo')
+    call mkdir($HOME.'/.vim/undo', 'p')
+endif
+
+set backup
+set backupdir=~/.vim/backup//
+set directory=~/.vim/swap//
+set undodir=~/.vim/undo//
+set undofile
+
+" -----------------------------------------------------------------------------
+" TAGS CONFIGURATION
+" -----------------------------------------------------------------------------
+set tags+=.tags;/
+
+" -----------------------------------------------------------------------------
+" KEY MAPPINGS
+" -----------------------------------------------------------------------------
+" Set leader key
+let mapleader = " "
+let maplocalleader = " "
+
+" Better escape key
+inoremap jk <Esc>
+
+" Clear search highlighting
+nnoremap <silent> <C-l> :nohlsearch<CR><C-l>
+
+" Home/End key mappings (preserved from original)
+map <End> G                   " End brings vim to the end of the file
+map <Home> gg                 " Home brings vim to the beginning of file
+
+" Tab indentation in visual mode (preserved from original)
+vmap <tab> >gv
+vmap <s-tab> <gv
+
+" Better window navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Better split management
+nnoremap <leader>v :vsplit<CR>
+nnoremap <leader>h :split<CR>
+nnoremap <leader>= <C-w>=
+
+" Save file
+nnoremap <leader>w :w<CR>
+
+" Quit
+nnoremap <leader>q :q<CR>
+
+" Save and quit
+nnoremap <leader>wq :wq<CR>
+
+" Force quit
+nnoremap <leader>Q :q!<CR>
+
+" Select all
+nnoremap <leader>a ggVG
+
+" Copy to system clipboard
+vnoremap <leader>y "+y
+
+" Paste from system clipboard
+nnoremap <leader>p "+p
+
+" Move lines up and down
+nnoremap <A-j> :m .+1<CR>==
+nnoremap <A-k> :m .-2<CR>==
+inoremap <A-j> <Esc>:m .+1<CR>==gi
+inoremap <A-k> <Esc>:m .-2<CR>==gi
+vnoremap <A-j> :m '>+1<CR>gv=gv
+vnoremap <A-k> :m '<-2<CR>gv=gv
+
+" -----------------------------------------------------------------------------
+" TAB MANAGEMENT (preserved from original with improvements)
+" -----------------------------------------------------------------------------
+" Tab mappings
+nnoremap <leader>1 1gt
+nnoremap <leader>2 2gt
+nnoremap <leader>3 3gt
+nnoremap <leader>4 4gt
+nnoremap <leader>5 5gt
+nnoremap <leader>6 6gt
+nnoremap <leader>7 7gt
+nnoremap <leader>8 8gt
+nnoremap <leader>9 9gt
+
+" Tab navigation
+nnoremap <leader>tn :tabnew<CR>
+nnoremap <leader>tc :tabclose<CR>
+nnoremap <leader>to :tabonly<CR>
+
+" -----------------------------------------------------------------------------
+" PLUGIN MANAGEMENT (VIM-PLUG)
+" -----------------------------------------------------------------------------
+call plug#begin('~/.vim/plugged')
+
+" Status line enhancement
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+
+" Git integration
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
+
+" File explorer
+Plug 'preservim/nerdtree'
+
+" Fuzzy finder
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
+" Language servers and completion
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Syntax highlighting and language support
+Plug 'plasticboy/vim-markdown'
+Plug 'pangloss/vim-javascript'
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+Plug 'rust-lang/rust.vim'
+Plug 'cespare/vim-toml'
+Plug 'stephpy/vim-yaml'
+
+" Code linting (keeping ALE as backup to coc.nvim)
+Plug 'dense-analysis/ale'
+
+" Color schemes
+Plug 'morhetz/gruvbox'
+Plug 'dracula/vim', { 'as': 'dracula' }
+Plug 'joshdick/onedark.vim'
+
+" Useful utilities
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+Plug 'jiangmiao/auto-pairs'
+Plug 'preservim/tagbar'
+
+call plug#end()
+
+" -----------------------------------------------------------------------------
+" PLUGIN CONFIGURATION
+" -----------------------------------------------------------------------------
+
+" Gruvbox theme configuration
+let g:gruvbox_contrast_dark = 'medium'
+let g:gruvbox_improved_warnings = 1
+
+" NERDTree configuration
+nnoremap <leader>n :NERDTreeToggle<CR>
+nnoremap <leader>f :NERDTreeFind<CR>
+let NERDTreeShowHidden=1
+let NERDTreeIgnore=['\.DS_Store$', '\.git$', '\.pyc$', '__pycache__']
+
+" Airline configuration
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#formatter = 'unique_tail'
+let g:airline_theme='gruvbox'
+let g:airline_powerline_fonts = 1
+
+" FZF configuration
+nnoremap <C-p> :Files<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>rg :Rg<CR>
+nnoremap <leader>/ :BLines<CR>
+nnoremap <leader>? :Lines<CR>
+nnoremap <leader>: :Commands<CR>
+
+" CoC.nvim configuration
+" Use tab for trigger completion
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" Use K to show documentation
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+" GoTo code navigation
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" ALE configuration (as backup to coc.nvim)
+let g:ale_enabled = 0  " Disable by default, enable if coc.nvim not available
+let g:ale_linters = {
+\   'javascript': ['eslint'],
+\   'python': ['flake8', 'pylint'],
+\   'go': ['golint', 'go vet'],
+\   'rust': ['rustc'],
+\}
+let g:ale_fixers = {
+\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   'javascript': ['eslint'],
+\   'python': ['autopep8'],
+\   'rust': ['rustfmt'],
+\}
+
+" GitGutter configuration
+let g:gitgutter_enabled = 1
+let g:gitgutter_map_keys = 0
+nmap ]h <Plug>(gitgutter-next-hunk)
+nmap [h <Plug>(gitgutter-prev-hunk)
+
+" Tagbar configuration
+nnoremap <F8> :TagbarToggle<CR>
+
+" Python-mode configuration fix
+let g:pymode_lint = 0  " Disable python-mode linting to prevent conflicts
+
+" -----------------------------------------------------------------------------
+" CUSTOM COMMANDS AND FUNCTIONS
+" -----------------------------------------------------------------------------
+
+" Function to strip trailing whitespace
+function! StripTrailingWhitespace()
+  let l:save = winsaveview()
+  keeppatterns %s/\s\+$//e
+  call winrestview(l:save)
+endfunction
+
+" Command to strip trailing whitespace
+command! StripWhitespace call StripTrailingWhitespace()
+
+" Auto-strip trailing whitespace on save for certain file types
+autocmd BufWritePre *.py,*.js,*.html,*.css,*.vim,*.rs,*.go call StripTrailingWhitespace()
+
+" Function to toggle between relative and absolute line numbers
+function! NumberToggle()
+  if(&relativenumber == 1)
+    set norelativenumber
+    set number
+  else
+    set relativenumber
+  endif
+endfunc
+
+nnoremap <leader>l :call NumberToggle()<cr>
+
+" -----------------------------------------------------------------------------
+" FILE TYPE SPECIFIC SETTINGS
+" -----------------------------------------------------------------------------
+
+" Python settings
+autocmd FileType python setlocal tabstop=4 shiftwidth=4 expandtab
+autocmd FileType python setlocal colorcolumn=88
+
+" Go settings
+autocmd FileType go setlocal tabstop=4 shiftwidth=4 noexpandtab
+
+" JavaScript/TypeScript settings
+autocmd FileType javascript,typescript setlocal tabstop=2 shiftwidth=2 expandtab
+
+" HTML/CSS settings
+autocmd FileType html,css setlocal tabstop=2 shiftwidth=2 expandtab
+
+" Rust settings
+autocmd FileType rust setlocal tabstop=4 shiftwidth=4 expandtab
+
+" Markdown settings
+autocmd FileType markdown setlocal wrap linebreak
+autocmd FileType markdown setlocal spell
+
+" YAML settings
+autocmd FileType yaml setlocal tabstop=2 shiftwidth=2 expandtab
+
+" -----------------------------------------------------------------------------
+" ADDITIONAL SETTINGS
+" -----------------------------------------------------------------------------
+
+" Highlight column 80
+set colorcolumn=80
+
+" Show invisible characters
+set listchars=tab:▸\ ,trail:·,extends:❯,precedes:❮,nbsp:×
+set list
+
+" Split settings
+set splitbelow
+set splitright
+
+" Folding settings
+set foldmethod=indent
+set foldlevel=99
+set foldlevelstart=99
+
+" Search settings
+set path+=**
+set includeexpr+=substitute(v:fname,'\\.','/','g')
+
+" -----------------------------------------------------------------------------
+" PROJECT-SPECIFIC SETTINGS
+" -----------------------------------------------------------------------------
+" Enable project-specific .vimrc
+set exrc
+set secure  " Disable unsafe commands in local .vimrc files
+
+" -----------------------------------------------------------------------------
+" STATUS LINE (Custom fallback if airline not available)
+" -----------------------------------------------------------------------------
+if !exists('g:airline_symbols')
+  set statusline=%F%m%r%h%w\ [%{&ff}]\ [%Y]\ [%p%%]\ [%04l,%04v]
+endif
+
+" -----------------------------------------------------------------------------
+" AUTO COMMANDS
+" -----------------------------------------------------------------------------
+
+" Return to last edit position when opening files
+autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+
+" Auto-resize splits when Vim is resized
+autocmd VimResized * wincmd =
+
+" Highlight yanked text
+autocmd TextYankPost * silent! lua vim.highlight.on_yank()
+
+" -----------------------------------------------------------------------------
+" LOCAL CUSTOMIZATIONS
+" -----------------------------------------------------------------------------
+" Load local vimrc if it exists
+if filereadable(expand("~/.vimrc.local"))
+  source ~/.vimrc.local
+endif

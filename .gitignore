@@ -1,0 +1,121 @@
+# Dotfiles .gitignore
+
+# Log files
+*.log
+logs/
+install.log
+
+# Local configurations (machine-specific)
+local/local.zsh
+local/local.exports
+config/zsh/local.zsh
+
+# Machine info (auto-generated)
+local/machine.info
+
+# Backup directories
+.dotfiles-backup-*
+
+# ZSH compiled files
+*.zwc
+*.zcompdump
+config/zsh/.zcompdump
+
+# Vim temporary files
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Plugin directories (managed by plugin system)
+plugins/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Documentation build artifacts
+docs/build/
+docs/_build/
+
+# Test artifacts
+test-results/
+coverage/
+
+# Personal notes
+NOTES.md
+TODO.md
+PERSONAL.md
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.production
+.env.development
+
+# SSH keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+
+# Package manager files
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Ruby
+.bundle/
+vendor/
+
+# Go
+go.sum
+
+# Rust
+target/
+Cargo.lock
+
+# Local development database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Editor backup files
+*~
+\#*\#
+.#*
+
+# ctags
+tags
+TAGS
+
+# Local scripts (not for sharing)
+local-*.sh
+personal-*.sh

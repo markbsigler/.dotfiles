@@ -1,0 +1,13 @@
+# macOS-specific Git configuration
+[credential]
+	helper = osxkeychain
+
+# macOS-specific aliases and settings
+[core]
+	excludesfile = ~/.config/git/gitignore-macos
+
+[diff]
+	tool = opendiff
+
+[merge]
+	tool = opendiff

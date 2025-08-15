@@ -1,0 +1,23 @@
+# This is Git's per-user configuration file.
+[user]
+	email = markbsigler@gmail.com
+	name = Mark B. Sigler
+[http]
+	postBuffer = 1073741824
+
+# Cross-platform credential helpers
+[credential]
+	# macOS Keychain
+	helper = osxkeychain
+
+[credential "https://github.com"]
+	# Linux Git Credential Manager for GitHub
+	helper = 
+	helper = /usr/local/bin/git-credential-manager
+
+# Platform-specific includes
+[includeIf "gitdir:/Users/"]
+	path = ~/.config/git/gitconfig-macos
+
+[includeIf "gitdir:/home/"]
+	path = ~/.config/git/gitconfig-linux

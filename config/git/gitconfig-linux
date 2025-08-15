@@ -1,0 +1,14 @@
+# Linux-specific Git configuration
+[credential]
+	helper = cache --timeout=3600
+	# Alternative for GUI systems: helper = libsecret
+
+# Linux-specific settings
+[core]
+	excludesfile = ~/.config/git/gitignore-linux
+
+[diff]
+	tool = vimdiff
+
+[merge]
+	tool = vimdiff
