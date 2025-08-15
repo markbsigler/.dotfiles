@@ -1,8 +1,13 @@
 
 # ~/.zprofile - Login shell initialization
 
-# Homebrew setup (if installed)
-if [[ "$OSTYPE" == darwin* ]]; then
+# Load OS detection first (needed for package manager setup)
+if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/os-detection.zsh" ]]; then
+    source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/os-detection.zsh"
+fi
+
+# Package manager environment setup
+if is_macos; then
     # macOS - Homebrew is the standard package manager
     if [[ -x "/opt/homebrew/bin/brew" ]]; then
         # Apple Silicon macOS
@@ -11,12 +16,19 @@ if [[ "$OSTYPE" == darwin* ]]; then
         # Intel macOS
         eval "$(/usr/local/bin/brew shellenv)"
     fi
-elif [[ "$OSTYPE" == linux* ]]; then
-    # Linux - Homebrew is optional (native package managers: apt, dnf, pacman, etc.)
-    # Only set up if user has explicitly installed Homebrew/Linuxbrew
+elif is_linux; then
+    # Linux - Use native package manager first, Homebrew as optional supplement
+    # Native package managers (apt, dnf, pacman) don't need shellenv setup
+    
+    # Only set up Homebrew if explicitly installed by user
     if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
         eval "$($HOME/.linuxbrew/bin/brew shellenv)"
+    fi
+    
+    # Ensure ~/.local/bin is in PATH for user-installed tools
+    if [[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        export PATH="$HOME/.local/bin:$PATH"
     fi
 fi
