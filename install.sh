@@ -460,6 +460,11 @@ validate_installation() {
         local target="${link%:*}"
         local source="${link#*:}"
         
+        # In update mode, only validate existing symlinks
+        if [[ "$UPDATE_MODE" == true ]] && [[ ! -L "$target" ]]; then
+            continue
+        fi
+        
         if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$source" ]]; then
             success "✓ $target → $source"
         else
