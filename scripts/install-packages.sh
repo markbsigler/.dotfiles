@@ -531,8 +531,17 @@ install_version_managers() {
     
     # Install pyenv (Python Version Manager)
     if ! command_exists pyenv; then
-        info "Installing pyenv..."
-        curl https://pyenv.run | bash
+        if [[ -d "$HOME/.pyenv" ]]; then
+            warning "pyenv directory already exists, updating..."
+            cd "$HOME/.pyenv" && git pull
+            # Add pyenv to PATH for current session if not already there
+            if [[ ":$PATH:" != *":$HOME/.pyenv/bin:"* ]]; then
+                export PATH="$HOME/.pyenv/bin:$PATH"
+            fi
+        else
+            info "Installing pyenv..."
+            curl https://pyenv.run | bash
+        fi
     fi
     
     # Install rbenv (Ruby Version Manager)
@@ -541,8 +550,18 @@ install_version_managers() {
         if [[ "$(detect_os)" == "macos" ]]; then
             brew install rbenv
         else
-            git clone https://github.com/rbenv/rbenv.git "$HOME/.rbenv"
-            git clone https://github.com/rbenv/ruby-build.git "$HOME/.rbenv/plugins/ruby-build"
+            if [[ -d "$HOME/.rbenv" ]]; then
+                warning "rbenv directory already exists, updating..."
+                cd "$HOME/.rbenv" && git pull
+                if [[ -d "$HOME/.rbenv/plugins/ruby-build" ]]; then
+                    cd "$HOME/.rbenv/plugins/ruby-build" && git pull
+                else
+                    git clone https://github.com/rbenv/ruby-build.git "$HOME/.rbenv/plugins/ruby-build"
+                fi
+            else
+                git clone https://github.com/rbenv/rbenv.git "$HOME/.rbenv"
+                git clone https://github.com/rbenv/ruby-build.git "$HOME/.rbenv/plugins/ruby-build"
+            fi
         fi
     fi
     
