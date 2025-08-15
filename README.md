@@ -496,7 +496,7 @@ make help           # Show all commands
 
 ```bash
 # Update all plugins (recommended)
-make plugin-update
+make plugins
 
 # Alternate: make plugins (does the same thing)
 

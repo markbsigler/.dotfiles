@@ -12,15 +12,6 @@ fonts:
 		fi; \
 	else \
 		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences.$(NC)"; \
-	fi
-## Update ZSH plugins (alternate target)
-plugin-update:
-	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
-	@if [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
-		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
-	else \
-		echo "❌ No plugins directory found"; \
-	fi
 # .dotfiles Makefile
 # Provides convenient commands for managing .dotfiles installation and maintenance
 

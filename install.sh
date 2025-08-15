@@ -603,7 +603,7 @@ EOF
         info "Next steps:"
         echo "  1. Restart your terminal or run: source ~/.zshrc"
         echo "  2. Check the setup with: make doctor"
-        echo "  3. Update plugins with: plugin-update"
+        echo "  3. Update plugins with: make plugins"
         echo "  4. Customize local settings in: ~/.config/zsh/local.zsh"
     else
         info "Dry run completed. Use '$0' to perform actual installation."
