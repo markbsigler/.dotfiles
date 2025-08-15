@@ -114,7 +114,7 @@ setup_ssh_key() {
         echo
         
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            read -p "Enter your email address: " email
+            read -rp "Enter your email address: " email
             
             if [[ -n "$email" ]]; then
                 info "Generating SSH key..."
@@ -129,7 +129,7 @@ setup_ssh_key() {
                 echo
                 cat "$HOME/.ssh/id_ed25519.pub"
                 echo
-                read -p "Press Enter after adding the key to GitHub..."
+                read -rp "Press Enter after adding the key to GitHub..."
             fi
         fi
     fi
@@ -180,12 +180,12 @@ install_dotfiles() {
 # Configure git (if not already configured)
 configure_git() {
     if ! git config --global user.name >/dev/null 2>&1; then
-        read -p "Enter your Git username: " git_name
+        read -rp "Enter your Git username: " git_name
         git config --global user.name "$git_name"
     fi
     
     if ! git config --global user.email >/dev/null 2>&1; then
-        read -p "Enter your Git email: " git_email
+        read -rp "Enter your Git email: " git_email
         git config --global user.email "$git_email"
     fi
     

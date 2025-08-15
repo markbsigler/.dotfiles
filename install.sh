@@ -9,7 +9,8 @@ set -euo pipefail
 
 # Configuration
 readonly DOTFILES_DIR="$HOME/.dotfiles"
-readonly BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
+BACKUP_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+readonly BACKUP_DIR="$HOME/.dotfiles-backup-$BACKUP_TIMESTAMP"
 readonly LOG_FILE="$DOTFILES_DIR/install.log"
 
 # Ensure dotfiles directory exists for logging
@@ -144,7 +145,7 @@ parse_args() {
                 shift
                 ;;
             -v|--verbose)
-                VERBOSE=true
+                export VERBOSE=true
                 shift
                 ;;
             -u|--update)
@@ -288,7 +289,7 @@ install_packages() {
 setup_zsh() {
     if command_exists zsh; then
         local current_shell
-        current_shell=$(echo "$SHELL")
+        current_shell="$SHELL"
         
         if [[ "$current_shell" != *"zsh"* ]]; then
             info "Setting ZSH as default shell..."

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Detect if a Nerd Font is installed (checks for Agave Nerd Font by default)
 has_nerd_font() {
     fc-list | grep -i "Nerd Font" | grep -q "FiraCode" && return 0

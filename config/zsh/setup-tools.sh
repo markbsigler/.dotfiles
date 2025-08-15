@@ -128,7 +128,7 @@ log_success "Vim plugins installed"
 # Setup FZF key bindings
 if command_exists fzf; then
     log_info "Setting up FZF key bindings..."
-    $(brew --prefix)/opt/fzf/install --key-bindings --completion --no-update-rc
+    "$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc
     log_success "FZF key bindings configured"
 fi
 
