@@ -28,7 +28,13 @@ fi
 # NVM (lazy loading with cross-platform support)
 nvm_lazy_load() {
     unset -f nvm node npm npx
-    export NVM_DIR="$HOME/.nvm"
+    
+    # Use XDG-compliant directory if it exists, otherwise fall back to default
+    if [[ -d "$HOME/.config/nvm" ]]; then
+        export NVM_DIR="$HOME/.config/nvm"
+    else
+        export NVM_DIR="$HOME/.nvm"
+    fi
     
     # Try multiple NVM locations based on platform and installation method
     local nvm_script=""
