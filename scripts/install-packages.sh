@@ -578,6 +578,14 @@ install_version_managers() {
 install_dev_tools() {
     info "Installing additional development tools..."
     
+    # Install GitHub CLI Copilot extension
+    if command_exists gh; then
+        if ! gh extension list | grep -q "github/gh-copilot"; then
+            info "Installing GitHub CLI Copilot extension..."
+            gh extension install github/gh-copilot || warning "Failed to install gh-copilot extension. You may need to authenticate with 'gh auth login' first."
+        fi
+    fi
+    
     # Install Docker (if requested)
     read -p "Install Docker? (y/N): " -n 1 -r
     echo
