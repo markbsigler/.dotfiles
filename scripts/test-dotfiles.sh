@@ -334,7 +334,7 @@ test_integration() {
         else
             error "✗ ZSH configuration has errors"
             test_fail "Integration" "ZSH configuration errors"
-            return
+            return 1
         fi
         
         # Test that key functions are available after loading from repository
@@ -345,7 +345,7 @@ test_integration() {
         fi
         
         test_pass "Integration"
-        return
+        return 0
     fi
     
     # Test that ZSH loads without errors (installed version)
@@ -354,7 +354,7 @@ test_integration() {
     else
         error "✗ ZSH configuration has errors"
         test_fail "Integration" "ZSH configuration errors"
-        return
+        return 1
     fi
     
     # Test that key functions are available after loading
@@ -372,6 +372,7 @@ test_integration() {
     fi
     
     test_pass "Integration"
+    return 0
 }
 
 # Performance tests
@@ -475,7 +476,11 @@ case "${1:-}" in
         ;;
     --integration)
         test_integration
-        exit $?
+        if [[ $? -eq 0 ]]; then
+            exit 0
+        else
+            exit 1
+        fi
         ;;
     --performance)
         test_performance
