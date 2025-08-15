@@ -21,8 +21,8 @@ plugin-update:
 	else \
 		echo "❌ No plugins directory found"; \
 	fi
-# Dotfiles Makefile
-# Provides convenient commands for managing dotfiles installation and maintenance
+# .dotfiles Makefile
+# Provides convenient commands for managing .dotfiles installation and maintenance
 
 .PHONY: help install update clean backup test lint docs doctor
 
@@ -69,14 +69,14 @@ endif
 
 ## Display this help message
 help:
-	@echo "$(YELLOW)Dotfiles Management Commands$(NC)"
+	@echo "$(YELLOW).dotfiles Management Commands$(NC)"
 	@echo ""
 	@echo "$(GREEN)System Info:$(NC)"
 	@echo "  OS: $(OS_NAME) ($(ARCH))"
 	@echo "  Package Manager: $(PACKAGE_MANAGER)"
 	@echo ""
 	@echo "$(GREEN)Installation:$(NC)"
-	@echo "  make install        Install dotfiles (full setup)"
+	@echo "  make install        Install .dotfiles (full setup)"
 	@echo "  make install-dry    Preview installation without making changes"
 	@echo "  make update         Update existing symlinks only"
 	@echo "  make force          Force installation, overwriting existing files"
@@ -94,13 +94,13 @@ help:
 	@echo "  make plugins        Update ZSH plugins"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
-	@echo "  make status         Show dotfiles status"
+	@echo "  make status         Show .dotfiles status"
 	@echo "  make deps           Show dependencies"
 	@echo "  make docs           Generate documentation"
 
-## Install dotfiles (full setup)
+## Install .dotfiles (full setup)
 install:
-	@echo "$(GREEN)Installing dotfiles for $(OS_NAME)...$(NC)"
+	@echo "$(GREEN)Installing .dotfiles for $(OS_NAME)...$(NC)"
 	@./install.sh
 	@echo "$(YELLOW)If you see '?' instead of icons, run 'make fonts' and set your terminal font to FiraCode Nerd Font.$(NC)"
 
@@ -111,12 +111,12 @@ install-dry:
 
 ## Update existing symlinks only
 update:
-	@echo "$(GREEN)Updating dotfiles...$(NC)"
+	@echo "$(GREEN)Updating .dotfiles...$(NC)"
 	@./install.sh --update
 
 ## Force installation, overwriting existing files
 force:
-	@echo "$(RED)Force installing dotfiles...$(NC)"
+	@echo "$(RED)Force installing .dotfiles...$(NC)"
 	@./install.sh --force
 
 ## Install packages only
@@ -269,7 +269,7 @@ doctor:
 		fi; \
 	done
 	@echo ""
-	@echo "$(YELLOW)Dotfiles Status:$(NC)"
+	@echo "$(YELLOW).dotfiles Status:$(NC)"
 	@make -s status
 
 ## Update ZSH plugins
@@ -281,9 +281,9 @@ plugins:
 		echo "❌ No plugins directory found"; \
 	fi
 
-## Show dotfiles status
+## Show .dotfiles status
 status:
-	@echo "$(GREEN)Dotfiles Status:$(NC)"
+	@echo "$(GREEN).dotfiles Status:$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Symlinks:$(NC)"
 	@for link in \

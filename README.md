@@ -1,5 +1,5 @@
 
-# Dotfiles
+# .dotfiles
 
 ---
 
@@ -17,9 +17,9 @@ To see all prompt and file icons correctly, you must use a [Nerd Font](https://w
 
 - If you see `?` instead of icons, double-check your terminal font setting.
 
-## Cross-Platform Dotfiles
+## Cross-Platform .dotfiles
 
-A comprehensive, portable dotfiles setup that works seamlessly across macOS and Linux systems. Features intelligent platform detection, modern shell enhancements, developer tools, and cross-platform compatibility.
+A comprehensive, portable .dotfiles setup that works seamlessly across macOS and Linux systems. Features intelligent platform detection, modern shell enhancements, developer tools, and cross-platform compatibility.
 
 ## ✨ Features
 
@@ -39,7 +39,7 @@ A comprehensive, portable dotfiles setup that works seamlessly across macOS and 
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/dotfiles ~/.dotfiles
+git clone https://github.com/yourusername/.dotfiles ~/.dotfiles
 cd ~/.dotfiles && make install
 ```
 
@@ -47,7 +47,7 @@ cd ~/.dotfiles && make install
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/dotfiles ~/.dotfiles
+git clone https://github.com/yourusername/.dotfiles ~/.dotfiles
 cd ~/.dotfiles
 
 # Preview what will be installed (dry run)
@@ -158,7 +158,7 @@ wsl_update() { wsl.exe --update; }        # Update WSL kernel
 
 ## 🔧 Universal Package Management
 
-The dotfiles include cross-platform package management functions that work the same way regardless of your operating system:
+The .dotfiles include cross-platform package management functions that work the same way regardless of your operating system:
 
 ```bash
 # Universal commands that work on all platforms:
@@ -184,7 +184,7 @@ The system automatically detects and uses the appropriate package manager:
 ### Automatic Path Detection
 
 
-The dotfiles automatically detect and configure paths for:
+The .dotfiles automatically detect and configure paths for:
 
 **macOS Paths:**
 
@@ -243,7 +243,7 @@ clean_path()  # Available as a manual function
 ## ⚙️ Configuration Structure
 
 ```text
-dotfiles/
+.dotfiles/
 ├── config/
 │   ├── zsh/                    # Zsh configuration
 │   │   ├── os-detection.zsh    # Platform detection
@@ -270,7 +270,7 @@ dotfiles/
 
 ## 🔍 OS Detection and Environment
 
-The dotfiles automatically detect your system and configure accordingly:
+The .dotfiles automatically detect your system and configure accordingly:
 
 ```bash
 # Check your detected environment
@@ -288,7 +288,7 @@ show_env
 
 ### Environment Variables
 
-Key environment variables set by the dotfiles:
+Key environment variables set by the .dotfiles:
 
 ```bash
 $DOTFILES_OS        # macos, linux, windows
@@ -329,7 +329,7 @@ Git configuration includes platform-specific settings:
 
 ## 🔧 Tool Detection and Fallbacks
 
-The dotfiles include intelligent fallbacks for cross-platform compatibility:
+The .dotfiles include intelligent fallbacks for cross-platform compatibility:
 
 ### Editor Selection
 
@@ -808,8 +808,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/dotfiles/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/dotfiles/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/.dotfiles/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/.dotfiles/discussions)
 - **Documentation**: Run `make docs` to generate detailed docs
 
 ---
