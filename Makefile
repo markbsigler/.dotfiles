@@ -54,7 +54,7 @@ else ifeq ($(OS),linux)
 	PACKAGE_MANAGER := apt
 	STAT_CMD := stat -c '%Y' | xargs -I{} date -d @{} +'%j'
 	# Detect Linux distribution
-	DISTRO := $(shell test -f /etc/os-release && awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release || echo unknown)
+	DISTRO := $(shell test -f /etc/os-release && grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo unknown)
 	ifeq ($(DISTRO),ubuntu)
 		PACKAGE_MANAGER := apt
 	else ifeq ($(DISTRO),fedora)
