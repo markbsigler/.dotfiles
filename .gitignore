@@ -52,9 +52,8 @@ tmp/
 temp/
 .tmp/
 
-# Documentation build artifacts
-docs/build/
-docs/_build/
+# Generated documentation
+SYSTEM_INFO.md
 
 # Test artifacts
 test-results/

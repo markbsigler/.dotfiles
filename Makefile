@@ -96,7 +96,7 @@ help:
 	@echo "$(GREEN)Information:$(NC)"
 	@echo "  make status         Show .dotfiles status"
 	@echo "  make deps           Show dependencies"
-	@echo "  make docs           Generate documentation"
+	@echo "  make docs           Generate system info documentation"
 
 ## Install .dotfiles (full setup)
 install:
@@ -363,27 +363,26 @@ deps:
 	@echo "  go        - Go compiler"
 	@echo "  rust      - Rust compiler"
 
-## Generate documentation
+## Generate system documentation
 docs:
-	@echo "$(GREEN)Generating documentation...$(NC)"
-	@mkdir -p docs
-	@echo "# Dotfiles Documentation" > docs/README.md
-	@echo "" >> docs/README.md
-	@echo "Generated on $$(date) for $(OS_NAME)" >> docs/README.md
-	@echo "" >> docs/README.md
-	@echo "## System Information" >> docs/README.md
-	@echo "- OS: $(OS_NAME)" >> docs/README.md
-	@echo "- Architecture: $(ARCH)" >> docs/README.md
+	@echo "$(GREEN)Generating system documentation...$(NC)"
+	@echo "# System Information" > SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "Generated on $$(date) for $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## System Details" >> SYSTEM_INFO.md
+	@echo "- OS: $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "- Architecture: $(ARCH)" >> SYSTEM_INFO.md
 	@if [ "$(OS)" = "linux" ]; then \
-		echo "- Distribution: $(DISTRO)" >> docs/README.md; \
+		echo "- Distribution: $(DISTRO)" >> SYSTEM_INFO.md; \
 	fi
-	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> docs/README.md
-	@echo "" >> docs/README.md
-	@echo "## Configuration Files" >> docs/README.md
+	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## Configuration Files" >> SYSTEM_INFO.md
 	@find config -name "*.zsh" -o -name "*.vim" -o -name "gitconfig" | while read file; do \
-		echo "- $$file" >> docs/README.md; \
+		echo "- $$file" >> SYSTEM_INFO.md; \
 	done
-	@echo "✅ Documentation generated in docs/"
+	@echo "✅ System documentation generated as SYSTEM_INFO.md"
 
 ## Install development tools
 dev-setup:
