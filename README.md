@@ -35,19 +35,44 @@ A comprehensive, portable .dotfiles setup that works seamlessly across macOS and
 
 ## 🚀 Quick Start
 
-### One-Line Installation
+### Step 1: Fork or Clone
+
+#### Option A: Fork for Personal Use (Recommended)
+
+1. Fork this repository on GitHub to create your own copy
+2. Clone your forked repository:
 
 ```bash
-# Clone and install
-git clone https://github.com/yourusername/.dotfiles ~/.dotfiles
+git clone https://github.com/YOURUSERNAME/.dotfiles ~/.dotfiles
+```
+
+#### Option B: Direct Clone (For Testing)
+
+```bash
+git clone https://github.com/markbsigler/.dotfiles ~/.dotfiles
+```
+
+### Step 2: Install
+
+```bash
 cd ~/.dotfiles && make install
+```
+
+### One-Line Installation (Fork First!)
+
+After forking the repository to your GitHub account:
+
+```bash
+# Replace YOURUSERNAME with your actual GitHub username
+git clone https://github.com/YOURUSERNAME/.dotfiles ~/.dotfiles && cd ~/.dotfiles && make install
 ```
 
 ### Manual Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/.dotfiles ~/.dotfiles
+# 1. Fork this repository on GitHub first, then:
+# 2. Clone YOUR fork (replace YOURUSERNAME with your GitHub username)
+git clone https://github.com/YOURUSERNAME/.dotfiles ~/.dotfiles
 cd ~/.dotfiles
 
 # Preview what will be installed (dry run)
@@ -58,6 +83,42 @@ make install
 
 # Or install without packages
 make install --skip-packages
+```
+
+## 🎨 Why Fork This Repository?
+
+**Dotfiles are personal!** This repository provides a solid foundation, but you'll want to customize it for your workflow:
+
+### Benefits of Forking
+
+- **Personal Customization**: Add your own aliases, functions, and configurations
+- **Version Control**: Track your personal changes and improvements over time  
+- **Easy Updates**: Pull upstream changes while keeping your customizations
+- **Backup & Sync**: Your dotfiles are backed up on GitHub across all your machines
+- **Share & Collaborate**: Share your customizations with others
+
+### Making It Yours
+
+After forking and installing:
+
+1. **Add personal configs**: Edit files in `config/zsh/local.zsh` for machine-specific settings
+2. **Customize aliases**: Modify `config/zsh/aliases.zsh` with your preferred shortcuts
+3. **Update Git config**: Set your name and email in `config/git/gitconfig`
+4. **Add tools**: Install additional packages by editing `scripts/install-packages.sh`
+5. **Commit changes**: `git add . && git commit -m "Personal customizations"`
+6. **Push to your fork**: `git push origin main`
+
+### Staying Updated
+
+To get new features from the original repository:
+
+```bash
+# Add upstream remote (one time setup)
+git remote add upstream https://github.com/markbsigler/.dotfiles.git
+
+# Update from upstream
+git fetch upstream
+git merge upstream/main
 ```
 
 ## 📋 System Support
