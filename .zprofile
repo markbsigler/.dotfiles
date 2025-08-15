@@ -1,9 +1,9 @@
 
 # ~/.zprofile - Login shell initialization
 
-# Cross-platform Homebrew setup
+# Homebrew setup (if installed)
 if [[ "$OSTYPE" == darwin* ]]; then
-    # macOS Homebrew paths
+    # macOS - Homebrew is the standard package manager
     if [[ -x "/opt/homebrew/bin/brew" ]]; then
         # Apple Silicon macOS
         eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -12,7 +12,8 @@ if [[ "$OSTYPE" == darwin* ]]; then
         eval "$(/usr/local/bin/brew shellenv)"
     fi
 elif [[ "$OSTYPE" == linux* ]]; then
-    # Linux Homebrew (Linuxbrew)
+    # Linux - Homebrew is optional (native package managers: apt, dnf, pacman, etc.)
+    # Only set up if user has explicitly installed Homebrew/Linuxbrew
     if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
