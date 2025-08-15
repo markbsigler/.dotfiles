@@ -206,12 +206,23 @@ create_symlink() {
         fi
     fi
     
-    # Skip if in update mode and target doesn't exist
+    # Skip if in update mode and target doesn't exist as a symlink
     if [[ "$UPDATE_MODE" == true ]] && [[ ! -L "$target" ]]; then
         return 0
     fi
     
-    # Backup existing file
+    # In update mode, if target exists but points to wrong location, update it
+    if [[ "$UPDATE_MODE" == true ]] && [[ -L "$target" ]]; then
+        local current_target
+        current_target="$(readlink "$target")"
+        if [[ "$current_target" == "$source" ]]; then
+            # Already correct, no need to update
+            return 0
+        fi
+        # Continue to update the symlink below
+    fi
+    
+    # Backup existing file (only if not in update mode or if not already a correct symlink)
     backup_file "$target"
     
     # Remove existing file/symlink
