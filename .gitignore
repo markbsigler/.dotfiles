@@ -122,3 +122,4 @@ TAGS
 # Local scripts (not for sharing)
 local-*.sh
 personal-*.sh
+install_output.txt
