@@ -448,15 +448,20 @@ case "${1:-}" in
         test_config_structure
         test_zsh_syntax
         test_shell_syntax
+        exit $?
         ;;
     --integration)
         test_integration
+        exit $?
         ;;
     --performance)
         test_performance
+        exit $?
         ;;
     "")
         run_tests
+        exit_code=$?
+        exit $exit_code
         ;;
     *)
         echo "Unknown option: $1"
