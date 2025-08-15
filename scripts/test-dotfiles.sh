@@ -325,7 +325,30 @@ test_tool_availability() {
 test_integration() {
     test_start "Integration"
     
-    # Test that ZSH loads without errors
+    # Check if dotfiles are installed
+    if [[ ! -f ~/.zshrc ]]; then
+        warning "Dotfiles not installed, testing repository files directly"
+        # Test ZSH config from repository
+        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source $(pwd)/.zshrc" 2>/dev/null; then
+            info "✓ ZSH configuration loads successfully from repository"
+        else
+            error "✗ ZSH configuration has errors"
+            test_fail "Integration" "ZSH configuration errors"
+            return
+        fi
+        
+        # Test that key functions are available after loading from repository
+        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source $(pwd)/.zshrc && type is_macos" >/dev/null 2>&1; then
+            info "✓ OS detection functions available"
+        else
+            warning "OS detection functions not available"
+        fi
+        
+        test_pass "Integration"
+        return
+    fi
+    
+    # Test that ZSH loads without errors (installed version)
     if zsh -c "source ~/.zshrc" 2>/dev/null; then
         info "✓ ZSH configuration loads successfully"
     else
