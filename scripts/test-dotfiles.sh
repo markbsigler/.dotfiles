@@ -326,7 +326,7 @@ test_integration() {
     test_start "Integration"
     
     # Test that ZSH loads without errors
-    if zsh -c "source .zshrc" 2>/dev/null; then
+    if zsh -c "source ~/.zshrc" 2>/dev/null; then
         info "✓ ZSH configuration loads successfully"
     else
         error "✗ ZSH configuration has errors"
@@ -335,14 +335,14 @@ test_integration() {
     fi
     
     # Test that key functions are available after loading
-    if zsh -c "source .zshrc && type is_macos" >/dev/null 2>&1; then
+    if zsh -c "source ~/.zshrc && type is_macos" >/dev/null 2>&1; then
         info "✓ OS detection functions available"
     else
         warning "OS detection functions not available"
     fi
     
     # Test that aliases are loaded
-    if zsh -c "source .zshrc && alias l" >/dev/null 2>&1; then
+    if zsh -c "source ~/.zshrc && alias l" >/dev/null 2>&1; then
         info "✓ Aliases loaded"
     else
         warning "Aliases not loaded"
