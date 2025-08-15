@@ -384,7 +384,12 @@ install_modern_tools_ubuntu() {
     
     # Install fzf (fuzzy finder)
     if ! command_exists fzf; then
-        git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
+        if [[ -d "$HOME/.fzf" ]]; then
+            warning "fzf directory already exists, updating..."
+            cd "$HOME/.fzf" && git pull
+        else
+            git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
+        fi
         "$HOME/.fzf/install" --all --no-bash --no-fish
     fi
     
