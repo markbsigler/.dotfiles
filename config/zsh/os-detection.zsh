@@ -12,7 +12,7 @@ case "$(uname -s)" in
         export DOTFILES_ARCH="$(uname -m)"
         # Detect Linux distribution
         if [[ -f /etc/os-release ]]; then
-            export DOTFILES_DISTRO="$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)"
+            export DOTFILES_DISTRO="$(grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')"
         fi
         ;;
     CYGWIN*|MINGW*|MSYS*)

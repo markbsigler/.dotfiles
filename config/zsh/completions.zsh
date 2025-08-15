@@ -2,7 +2,7 @@
 
 # Modern completion system
 autoload -Uz compinit
-compinit
+compinit -u
 
 # Set up completion menu navigation
 zstyle ':completion:*' menu select
