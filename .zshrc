@@ -1,5 +1,8 @@
 # ~/.zshrc - Main configuration file
 
+# Skip insecure directory warnings (common on Linux with mixed ownership)
+export ZSH_DISABLE_COMPFIX=true
+
 # XDG Base Directory specification
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"

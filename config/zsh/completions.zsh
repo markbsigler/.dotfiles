@@ -1,6 +1,8 @@
 # ~/.config/zsh/completions.zsh - Enhanced completion settings
 
 # Modern completion system
+# Skip insecure directory warnings on Linux
+export ZSH_DISABLE_COMPFIX=true
 autoload -Uz compinit
 compinit -u
 
