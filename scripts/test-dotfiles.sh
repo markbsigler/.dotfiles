@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cross-platform testing script for dotfiles
 
-set -euo pipefail
+set -eo pipefail  # Removed 'u' flag to allow unset variables
 
 # Colors
 RED='\033[0;31m'
@@ -25,20 +25,20 @@ error() { echo -e "${RED}❌ $*${NC}"; }
 test_start() {
     local test_name="$1"
     echo -e "\n${BLUE}Testing: $test_name${NC}"
-    ((TESTS_RUN++))
+    TESTS_RUN=$((TESTS_RUN + 1))
 }
 
 test_pass() {
     local test_name="$1"
     success "$test_name: PASSED"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 test_fail() {
     local test_name="$1"
     local reason="$2"
     error "$test_name: FAILED - $reason"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 # OS Detection tests
@@ -349,7 +349,12 @@ test_integration() {
     fi
     
     # Test that ZSH loads without errors (installed version)
-    if zsh -c "source ~/.zshrc" 2>/dev/null; then
+    local zsh_load_result=0
+    if ! zsh -c "source ~/.zshrc" 2>/dev/null; then
+        zsh_load_result=1
+    fi
+    
+    if [[ $zsh_load_result -eq 0 ]]; then
         info "✓ ZSH configuration loads successfully"
     else
         error "✗ ZSH configuration has errors"
@@ -476,9 +481,12 @@ case "${1:-}" in
         ;;
     --integration)
         test_integration
-        if [[ $? -eq 0 ]]; then
+        exit_code=$?
+        if [[ $exit_code -eq 0 ]]; then
+            echo -e "\n${GREEN}Integration test completed successfully${NC}"
             exit 0
         else
+            echo -e "\n${RED}Integration test failed${NC}"
             exit 1
         fi
         ;;
