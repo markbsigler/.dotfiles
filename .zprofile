@@ -1,7 +1,9 @@
 
 # ~/.zprofile - Login shell initialization
 # This file is sourced for login shells before .zshrc
-# Keep minimal - most configuration should be in .zshrc
+# On macOS Terminal.app, login shells don't automatically source .zshrc
 
-# Source .zshrc for login shells that might not source it automatically
-[[ -z "$ZSHRC_LOADED" && -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+# Ensure .zshrc is sourced for interactive login shells
+if [[ -o interactive && -z "$ZSHRC_LOADED" ]]; then
+    [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+fi
