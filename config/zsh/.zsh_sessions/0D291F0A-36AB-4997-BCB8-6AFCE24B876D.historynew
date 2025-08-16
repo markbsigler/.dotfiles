@@ -1,0 +1,7 @@
+[[ -o login ]] && echo "login shell" || echo "non-login shell"
+[[ -o interactive ]] && echo "interactive shell" || echo "non-interactive shell"
+echo "ZSHRC_LOADED: '$ZSHRC_LOADED'"
+cat /etc/shells
+brew list zsh
+brew uninstall zsh
+which zsh

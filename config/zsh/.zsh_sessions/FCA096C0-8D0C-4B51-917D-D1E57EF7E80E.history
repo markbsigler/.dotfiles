@@ -1,0 +1,218 @@
+cd cics*
+ls
+find /Users/msigler/Code/cics-banking-sample-application-cbsa -name "*.jcl" | wc -l
+cd /Users/msigler/dotfiles && bash -n install.sh
+source config/zsh/os-detection.zsh && type is_macos
+bash -c "source config/zsh/os-detection.zsh && echo 'OS: $DOTFILES_OS' && type is_macos"
+bash debug_os.sh
+bash -x debug_os.sh
+ls -la config/zsh/os-detection.zsh
+zsh -n ~/.zshrc
+./install.sh
+ls -la backup/
+cd /Users/msigler && ls -la | grep -E "^\l.*\->"
+cd /Users/msigler/dotfiles && bash -x ./install.sh 2>&1 | head -50
+echo "Starting installation..." && ./install.sh && echo "Installation completed successfully
+bash -n install.sh
+./install.sh --dry-run --verbose
+ls -la install.sh
+chmod +x test_install.sh && ./test_install.sh
+zsh -c "source config/zsh/os-detection.zsh && source config/zsh/prompt.zsh && battery_prompt_info && echo 'Prompt functions loaded successfully'"
+./install.sh > install_output.log 2>&1; echo "Exit code: $?"
+wc -l install_output.log
+tail -20 install_output.log
+cd /Users/msigler && ls -la .gitconfig .vimrc .zshrc
+cd /Users/msigler/dotfiles && chmod +x verify_install.sh && ./verify_install.sh
+pwd
+code .
+cd /Users/msigler/.dotfiles && git commit -m "Update references from 'dotfiles' to '.dotfiles' in README and Makefile\
+\
+- Changed main title from 'Dotfiles' to '.dotfiles'\
+- Updated all text references to use '.dotfiles' consistently\
+- Changed GitHub URLs to reference .dotfiles repository name\
+- Updated Makefile comments and help text to reference .dotfiles\
+- Updated directory structure diagram to show .dotfiles/"
+git add docs
+git add README.md Makefile
+git commit -m "Update references from 'dotfiles' to '.dotfiles' in README and Makefile\
+\
+- Changed main title from 'Dotfiles' to '.dotfiles'\
+- Updated all text references to use '.dotfiles' consistently  \
+- Changed GitHub URLs to reference .dotfiles repository name\
+- Updated Makefile comments and help text to reference .dotfiles\
+- Updated directory structure diagram to show .dotfiles/\
+- Added docs directory"
+git commit -m "Fix fzf installation error when directory already exists\
+\
+- Check if ~/.fzf directory exists before cloning\
+- Update existing fzf installation instead of failing\
+- Prevents 'destination path already exists' error on Ubuntu Linux"
+git commit -m "Fix pyenv and rbenv installation errors when directories exist\
+\
+- Check if ~/.pyenv directory exists before installing pyenv\
+- Update existing pyenv installation instead of failing\
+- Check if ~/.rbenv directory exists before installing rbenv  \
+- Update existing rbenv and ruby-build instead of failing\
+- Prevents 'directory already exists' errors on repeated installs"
+git commit -m "Add GitHub CLI Copilot extension installation\
+\
+- Install gh-copilot extension automatically during setup\
+- Added to common install_dev_tools function for cross-platform support\
+- Handles authentication errors gracefully with warning message\
+- Fixes 'unknown command copilot for gh' error"
+git add Makefile
+git commit -m "Fix awk syntax error in make doctor command\
+\
+- Fixed nested command substitution issue in git status parsing\
+- Replaced complex expr command with arithmetic expansion \
+- Separated file count calculation for better readability\
+- Prevents 'awk: line 1: syntax error' on Ubuntu Linux"
+git commit -m "Remove automatic gh-copilot extension installation\
+\
+- Removed automatic installation of GitHub CLI Copilot extension\
+- gh-copilot is now optional and not required for the dotfiles setup\
+- Users can install it manually if needed with: gh extension install github/gh-copilot"
+git add config/zsh/aliases.zsh
+git commit -m "Fix gh copilot alias loading when extension not installed\
+\
+- Check if gh-copilot extension is installed before setting up aliases\
+- Prevents 'unknown command copilot for gh' error during zsh startup\
+- Makes gh copilot aliases optional based on extension availability"
+git rm --cached config/zsh/.zsh_history
+git add .gitignore
+git commit -m "Add .zsh_history to .gitignore and remove from tracking\
+\
+- Added config/zsh/.zsh_history to .gitignore\
+- Added .zsh_history pattern for any location\
+- Removed .zsh_history file from git tracking\
+- Prevents shell history from being committed to repository"
+git add Makefile scripts/install-packages.sh
+git commit -m "Fix font name inconsistency: use Agave Nerd Font consistently\
+\
+- Updated Makefile message to reference Agave Nerd Font instead of FiraCode\
+- Updated install-packages.sh to install Agave Nerd Font on all platforms\
+- Fixed macOS brew cask installation to use font-agave-nerd-font\
+- Updated Linux installation to download Agave.zip instead of FiraCode.zip\
+- Fixed all help messages and comments to reference Agave consistently\
+- Ensures font installation matches the actual font being installed"
+git add scripts/test-dotfiles.sh
+git commit -m "Fix integration test .zshrc path\
+\
+- Changed integration test to source ~/.zshrc instead of .zshrc\
+- Integration test was failing because .zshrc doesn't exist in dotfiles directory\
+- The actual .zshrc file is symlinked in the home directory\
+- Fixes 'make test' integration test failure"
+git commit -m "Fix make update validation to handle non-existent symlinks\
+\
+- Modified validation function to skip checking symlinks that don't exist in update mode\
+- Update mode only updates existing symlinks, doesn't create new ones\
+- Validation was failing because it expected all symlinks to exist even in update mode\
+- Now validation only checks symlinks that should exist based on the mode"
+git add install.sh
+git commit -m "Fix critical bug: make update was removing symlinks instead of updating\
+\
+- Fixed create_symlink function logic that was removing symlinks in update mode\
+- Added proper check for existing correct symlinks to avoid unnecessary updates\
+- Update mode now only modifies symlinks that need updating\
+- Prevents make update from removing existing working symlinks\
+- Fixes issue where make doctor showed missing symlinks after make update"
+command -v shellcheck
+git add scripts/install-packages.sh
+git commit -m "Add shellcheck as dependency for make lint command"
+git diff --staged
+git log -1 --oneline
+rm -rf docs/
+make docs
+make docs && ls -la SYSTEM_INFO.md
+ls -la | grep -E "docs|README|SYSTEM"
+git add -A
+git status
+cd /Users/msigler/.dotfiles && git commit -m "Remove docs subdirectory and consolidate documentation in root\
+\
+- Remove docs/ subdirectory and its generated content\
+- Update make docs to generate SYSTEM_INFO.md in root directory  \
+- Update .gitignore to ignore generated SYSTEM_INFO.md\
+- Update help text to clarify make docs generates system info\
+- All documentation now lives in ~/.dotfiles root for simplicity"
+ls -la | grep -E "(README|SYSTEM|docs)"
+rm SYSTEM_INFO.md && make help
+make -d lint 2>&1 | head -20
+make -n lint
+echo "OS: $OS" && echo "DISTRO evaluation:" && test -f /etc/os-release && awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release || echo "no os-release file"
+echo "Current OS detection:" && make -s -f - <<< 'test: ; @echo OS=$(shell uname -s)'
+which shellcheck || echo "shellcheck not found"
+brew install shellcheck
+which shellcheck && make lint 2>&1
+make lint
+make list | head -10
+echo "Testing make lint:" && timeout 10 make lint || echo "Command completed"
+find . -name "*.sh" -type f | head -3 | xargs shellcheck
+cd /Users/msigler/.dotfiles && git add Makefile && git commit -m "Fix awk syntax error in make list target\
+\
+- Simplified the complex awk command in list target\
+- Replaced problematic egrep syntax with simpler grep approach\
+- Should resolve 'awk: line 1: syntax error at or near )' error"
+echo 'ID="ubuntu"' | grep '^ID=' | cut -d= -f2 | tr -d '"'
+cd /Users/msigler/.dotfiles && git add Makefile && git commit -m "Fix Linux DISTRO detection awk syntax error\
+\
+- Replace problematic awk command with simpler grep/cut/tr pipeline  \
+- Avoid awk regex escaping issues in Makefile context\
+- More reliable and readable Linux distribution detection\
+- Resolves 'awk: line 1: syntax error at or near )' on Linux systems"
+git push
+make install
+echo "Starting make install..." && make install 2>&1 | tee install_output.log && echo "Install complete" && tail -10 install_output.log
+ls -la ~/.zshrc ~/.config/zsh 2>/dev/null || echo "No symlinks created yet"
+./install.sh --help 2>/dev/null || echo "No help available"
+./install.sh --skip-packages
+timeout 30 ./install.sh --skip-packages
+./install.sh --dry-run --skip-packages
+make status
+ls -la ~/.zshrc ~/.gitconfig ~/.vimrc ~/.config/zsh 2>/dev/null | head -10 || echo "Files don't exist yet"
+clear
+git add README.md && git commit -m "docs: improve installation instructions with fork/clone guidance\
+\
+- Add clear fork vs clone options with explanations\
+- Emphasize forking for personal customizations\
+- Include step-by-step customization guide\
+- Add upstream update instructions\
+- Explain benefits of having personal dotfiles repo\
+- Improve markdown formatting and structure"
+git add README.md && git commit -m "docs: add GitHub CLI instructions for easier forking\
+\
+- Add gh repo fork commands for one-line fork and clone  \
+- Provide both GitHub CLI and web interface options\
+- Note that gh repo fork automatically sets up upstream remote\
+- Makes forking process much simpler for users with GitHub CLI\
+- Maintains backward compatibility with manual fork instructions"
+git add .zprofile && git commit -m "fix: make .zprofile cross-platform compatible\
+\
+- Add OS detection for Homebrew setup\
+- Support macOS paths: /opt/homebrew (Apple Silicon) and /usr/local (Intel)  \
+- Support Linux paths: /home/linuxbrew and ~/.linuxbrew\
+- Check for executable existence before eval\
+- Maintains functionality across all supported platforms"
+git add .zprofile && git commit -m "clarify: Homebrew is optional on Linux, not the primary package manager\
+\
+- Update comments to clarify package manager roles\
+- macOS: Homebrew is the standard package manager\
+- Linux: Native package managers (apt, dnf, pacman) are primary\
+- Linux: Homebrew/Linuxbrew is optional and only set up if installed\
+- Maintains cross-platform compatibility while respecting platform conventions"
+git add .zprofile && git commit -m "feat: improve .zprofile with proper OS detection and package manager setup\
+\
+- Load os-detection.zsh functions first for proper OS/distro detection\
+- Use is_macos and is_linux functions instead of raw OSTYPE checks\
+- Add ~/.local/bin to PATH on Linux for user-installed tools\
+- Better alignment with package manager hierarchy from install-packages.sh\
+- Native package managers (apt, dnf, pacman) don't need shellenv setup\
+- Only Homebrew needs shellenv for environment variables and PATH setup"
+git add .zshenv .zprofile .zshrc && git commit -m "refactor: consolidate and improve zsh configuration file structure\
+\
+- Move XDG and essential env vars to .zshenv (available to all shells)\
+- Move Homebrew setup from .zprofile to .zshrc (after os-detection loads)\
+- Simplify .zprofile to minimal login shell setup with fallback sourcing\
+- Add ZSHRC_LOADED marker to prevent double-loading\
+- Better separation of concerns: .zshenv for vars, .zshrc for interactive config\
+- Ensures ~/.local/bin is in PATH for user-installed tools"
+git push origin main

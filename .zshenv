@@ -5,8 +5,8 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# Zsh configuration directory
-export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+# Zsh configuration directory (point to actual dotfiles location)
+export ZDOTDIR="$HOME/.dotfiles/config/zsh"
 
 # Ensure ~/.local/bin is in PATH for user-installed tools
 if [[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
