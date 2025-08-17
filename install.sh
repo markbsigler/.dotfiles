@@ -334,24 +334,16 @@ link_configs() {
     fi
 
     # Main zsh files
-    if [[ -f "$DOTFILES_DIR/.zshrc" ]]; then
-        # Always forcibly remove before symlinking, with a short delay to avoid race conditions
-        rm -f "$HOME/.zshrc"
-        sleep 1
-        # If .zshrc existed and was not a symlink, back it up
-        if [[ -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then
-            mv "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%s)"
-            info "Backed up and removed existing $HOME/.zshrc"
-        fi
-        create_symlink "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc"
+    if [[ -f "$DOTFILES_DIR/config/zsh/.zshrc" ]]; then
+        create_symlink "$DOTFILES_DIR/config/zsh/.zshrc" "$HOME/.zshrc"
     fi
 
-    if [[ -f "$DOTFILES_DIR/.zshenv" ]]; then
-        create_symlink "$DOTFILES_DIR/.zshenv" "$HOME/.zshenv"
+    if [[ -f "$DOTFILES_DIR/config/zsh/.zshenv" ]]; then
+        create_symlink "$DOTFILES_DIR/config/zsh/.zshenv" "$HOME/.zshenv"
     fi
     
-    if [[ -f "$DOTFILES_DIR/.zprofile" ]]; then
-        create_symlink "$DOTFILES_DIR/.zprofile" "$HOME/.zprofile"
+    if [[ -f "$DOTFILES_DIR/config/zsh/.zprofile" ]]; then
+        create_symlink "$DOTFILES_DIR/config/zsh/.zprofile" "$HOME/.zprofile"
     fi
     
     # Git configuration
@@ -461,7 +453,7 @@ validate_installation() {
     # Check critical symlinks
     local links=(
         "$HOME/.config/zsh:$DOTFILES_DIR/config/zsh"
-        "$HOME/.zshrc:$DOTFILES_DIR/.zshrc"
+        "$HOME/.zshrc:$DOTFILES_DIR/config/zsh/.zshrc"
     )
     
     # Add optional links if they exist

@@ -279,7 +279,7 @@ status:
 	@echo "$(YELLOW)Symlinks:$(NC)"
 	@for link in \
 		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
-		"$(HOME)/.zshrc:$(DOTFILES_DIR)/.zshrc" \
+		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
 		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
 		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
 	; do \
