@@ -13,7 +13,6 @@ install_nerd_font_macos() {
         return 0
     fi
     info "Installing Agave Nerd Font via Homebrew..."
-    brew tap homebrew/cask-fonts
     brew install --cask font-agave-nerd-font
     success "Agave Nerd Font installed! Please set it in your terminal preferences."
 }
