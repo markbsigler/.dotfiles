@@ -69,30 +69,11 @@ fi
 # Initialize completions (after all config loaded)
 autoload -Uz compinit
 
-# Cross-platform completion loading (more efficient)
-if command -v stat >/dev/null 2>&1; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS stat
-        typeset -i updated_at=$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null || echo 0)
-    else
-        # GNU stat (Linux)
-        if stat --version >/dev/null 2>&1; then
-            # GNU stat
-            typeset -i updated_at=$(stat -c '%Y' ~/.zcompdump 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0)
-        else
-            # BSD stat (some Linux distributions)
-            typeset -i updated_at=$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null || echo 0)
-        fi
-    fi
-    
-    if [[ ${updated_at} -lt $(date +'%j') ]]; then
-        compinit
-    else
-        compinit -C
-    fi
-else
-    # Fallback: always rebuild (safer but slower)
+# Cross-platform completion loading (simplified for reliability)
+if [[ -n "~/.zcompdump"(#qN.mh+24) ]]; then
     compinit
+else
+    compinit -C
 fi
 
 # Load version managers last (lazy loading)
