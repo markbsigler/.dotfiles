@@ -9,6 +9,8 @@
 [credential]
 	# macOS Keychain
 	helper = osxkeychain
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
 
 [credential "https://github.com"]
 	# Linux Git Credential Manager for GitHub
@@ -21,3 +23,16 @@
 
 [includeIf "gitdir:/home/"]
 	path = ~/.config/git/gitconfig-linux
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[core]
+	autocrlf = input
+	editor = vim
+[diff]
+	tool = vimdiff
+[merge]
+	tool = vimdiff

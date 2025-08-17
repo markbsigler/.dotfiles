@@ -196,7 +196,6 @@ fi
 
 # Install fonts for better terminal experience
 log_info "Installing fonts..."
-brew tap homebrew/cask-fonts
 fonts=(
     "font-fira-code-nerd-font"
     "font-hack-nerd-font"

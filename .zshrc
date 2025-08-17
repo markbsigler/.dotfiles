@@ -47,7 +47,7 @@ for config in "$ZDOTDIR"/{os-detection,exports,package-manager,prompt,aliases,fu
 done
 
 # Package manager environment setup (after os-detection is loaded)
-if is_macos; then
+if command -v is_macos >/dev/null && is_macos 2>/dev/null; then
     # macOS - Homebrew is the standard package manager
     if [[ -x "/opt/homebrew/bin/brew" ]]; then
         # Apple Silicon macOS
@@ -56,7 +56,7 @@ if is_macos; then
         # Intel macOS
         eval "$(/usr/local/bin/brew shellenv)"
     fi
-elif is_linux; then
+elif command -v is_linux >/dev/null && is_linux 2>/dev/null; then
     # Linux - Native package managers don't need shellenv setup
     # Only set up Homebrew if explicitly installed by user
     if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
