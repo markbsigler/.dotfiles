@@ -7,8 +7,11 @@ if ! command -v is_macos >/dev/null 2>&1; then
 fi
 # ~/.config/zsh/prompt.zsh - Enhanced cross-platform prompt with git info
 
-# Enable parameter expansion in prompts
+# CRITICAL: Ensure prompt expansion is enabled (Terminal.app compatibility)
+# These should be set in .zshenv, but double-check here for safety
 setopt PROMPT_SUBST
+setopt PROMPT_PERCENT
+setopt PROMPT_BANG
 
 # Git prompt function
 git_prompt_info() {
