@@ -328,20 +328,35 @@ test_integration() {
     # Check if dotfiles are installed
     if [[ ! -f ~/.zshrc ]]; then
         warning "Dotfiles not installed, testing repository files directly"
-        # Test ZSH config from repository
-        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source $(pwd)/.zshrc" 2>/dev/null; then
+        
+        # Set up test environment similar to actual .zshrc
+        export ZDOTDIR="$(pwd)/config/zsh"
+        export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+        
+        # Test ZSH config from repository with better error handling
+        local zsh_test_output
+        if zsh_test_output=$(ZDOTDIR="$(pwd)/config/zsh" zsh -c "source config/zsh/.zshrc" 2>&1); then
             info "✓ ZSH configuration loads successfully from repository"
         else
-            error "✗ ZSH configuration has errors"
+            error "✗ ZSH configuration has errors:"
+            echo "$zsh_test_output" | head -3
             test_fail "Integration" "ZSH configuration errors"
             return 1
         fi
         
         # Test that key functions are available after loading from repository
-        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source $(pwd)/.zshrc && type is_macos" >/dev/null 2>&1; then
+        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source config/zsh/.zshrc >/dev/null 2>&1 && type is_macos" >/dev/null 2>&1; then
             info "✓ OS detection functions available"
         else
-            warning "OS detection functions not available"
+            warning "OS detection functions not available in test context"
+        fi
+        
+        # Test that aliases are loaded (check for a basic alias that should always exist)
+        if ZDOTDIR="$(pwd)/config/zsh" zsh -c "source config/zsh/.zshrc >/dev/null 2>&1 && alias l" >/dev/null 2>&1; then
+            info "✓ Aliases loaded"
+        else
+            warning "Aliases not loaded in test context"
         fi
         
         test_pass "Integration"
@@ -350,30 +365,40 @@ test_integration() {
     
     # Test that ZSH loads without errors (installed version)
     local zsh_load_result=0
-    if ! zsh -c "source ~/.zshrc" 2>/dev/null; then
+    local zsh_output
+    if ! zsh_output=$(zsh -c "source ~/.zshrc" 2>&1); then
         zsh_load_result=1
     fi
     
     if [[ $zsh_load_result -eq 0 ]]; then
         info "✓ ZSH configuration loads successfully"
     else
-        error "✗ ZSH configuration has errors"
+        error "✗ ZSH configuration has errors:"
+        echo "$zsh_output" | head -3
         test_fail "Integration" "ZSH configuration errors"
         return 1
     fi
     
     # Test that key functions are available after loading
-    if zsh -c "source ~/.zshrc && type is_macos" >/dev/null 2>&1; then
+    if zsh -c "source ~/.zshrc >/dev/null 2>&1 && type is_macos" >/dev/null 2>&1; then
         info "✓ OS detection functions available"
     else
-        warning "OS detection functions not available"
+        warning "OS detection functions not available - may be expected in non-interactive shell"
     fi
     
     # Test that aliases are loaded
-    if zsh -c "source ~/.zshrc && alias l" >/dev/null 2>&1; then
+    if zsh -c "source ~/.zshrc >/dev/null 2>&1 && alias l" >/dev/null 2>&1; then
         info "✓ Aliases loaded"
     else
-        warning "Aliases not loaded"
+        warning "Aliases not loaded - may be expected in non-interactive shell"
+    fi
+    
+    # Test that environment variables are set correctly
+    local env_check
+    if env_check=$(zsh -c "source ~/.zshrc >/dev/null 2>&1 && echo \$DOTFILES_OS" 2>/dev/null) && [[ -n "$env_check" ]]; then
+        info "✓ Environment variables set (OS: $env_check)"
+    else
+        warning "Environment variables not accessible in test context"
     fi
     
     test_pass "Integration"
