@@ -229,8 +229,194 @@ doctor:
 	@echo ""
 	@echo "$(YELLOW)Required Tools:$(NC)"
 	@for cmd in git zsh vim curl; do \
-		if command -v $$cmd >/dev/null 2>&1; then \
-			echo "✅ $$cmd: $$(command -v $$cmd)"; \
+		if command -v $cmd >/dev/null 2>&1; then \
+			echo "✅ $cmd: $(command -v $cmd)"; \
+		else \
+			echo "❌ $cmd: not found"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW)Modern CLI Tools:$(NC)"
+	@for cmd in bat eza fd fzf rg jq gh; do \
+		if command -v $cmd >/dev/null 2>&1; then \
+			echo "✅ $cmd: $(command -v $cmd)"; \
+		elif command -v batcat >/dev/null 2>&1 && [ "$cmd" = "bat" ]; then \
+			echo "✅ bat (as batcat): $(command -v batcat)"; \
+		elif command -v fdfind >/dev/null 2>&1 && [ "$cmd" = "fd" ]; then \
+			echo "✅ fd (as fdfind): $(command -v fdfind)"; \
+		else \
+			echo "⚪ $cmd: not installed"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW)Version Managers:$(NC)"
+	@for cmd in nvm pyenv rbenv rustup; do \
+		if command -v $cmd >/dev/null 2>&1; then \
+			echo "✅ $cmd: $(command -v $cmd)"; \
+		elif [ "$cmd" = "nvm" ] && [ -d "$HOME/.nvm" ]; then \
+			echo "✅ nvm: $HOME/.nvm"; \
+		else \
+			echo "⚪ $cmd: not installed"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW).dotfiles Status:$(NC)"
+	@make -s status
+
+## Show .dotfiles status
+status:
+	@echo ""
+	@echo "$(YELLOW)Symlinks:$(NC)"
+	@for link in \
+		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
+		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
+		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
+		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
+	; do \
+		target="${link%%:*}"; \
+		source="${link##*:}"; \
+		if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then \
+			echo "✅ $target → $source"; \
+		elif [ -e "$target" ]; then \
+			echo "⚠️  $target exists but is not linked"; \
+		else \
+			echo "❌ $target not found"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW)Git Repository:$(NC)"
+	@if [ -d .git ]; then \
+		echo "Branch: $(git branch --show-current 2>/dev/null || echo 'detached HEAD')"; \
+		if git remote | grep -q origin 2>/dev/null; then \
+			echo "Remote: $(git remote get-url origin)"; \
+		else \
+			echo "Remote: No remote configured"; \
+		fi; \
+		echo ""; \
+		echo "$(YELLOW)Working Tree Status:$(NC)"; \
+		if git status --porcelain | grep -q .; then \
+			git status --porcelain | head -5; \
+			file_count=$(git status --porcelain | wc -l); \
+			if [ "$file_count" -gt 5 ]; then \
+				remaining=$(( $file_count - 5 )); \
+				echo "... and $remaining more files"; \
+			fi; \
+		else \
+			echo "✅ Working tree is clean"; \
+		fi; \
+	else \
+		echo "❌ Not a git repository"; \
+	fi
+
+## Install Nerd Fonts (Agave Nerd Font)
+fonts:
+	@echo "$(GREEN)Installing Agave Nerd Font...$(NC)"
+	@if [ "$(OS_NAME)" = "macOS" ] || [ "$(OS_NAME)" = "Linux" ]; then \
+		wget -O /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+		mkdir -p $HOME/.local/share/fonts; \
+		unzip -o /tmp/Agave.zip -d $HOME/.local/share/fonts/AgaveNerdFont; \
+		fc-cache -fv; \
+		echo "$(YELLOW)Set your terminal font to 'Agave Nerd Font' in preferences.$(NC)"; \
+		if [ "$(OS_NAME)" = "macOS" ]; then \
+			open /System/Library/PreferencePanes/Fonts.prefPane || true; \
+		fi; \
+	else \
+		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences.$(NC)"; \
+	fi
+
+## Update ZSH plugins
+plugins:
+	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
+	@if [ -d "$(XDG_DATA_HOME)/zsh/plugins" ]; then \
+		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
+	elif [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
+		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
+	else \
+		echo "❌ No plugins directory found"; \
+	fi
+
+## Show dependencies
+deps:
+	@echo "$(GREEN)Dependencies for $(OS_NAME):$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Required:$(NC)"
+	@echo "  git       - Version control"
+	@echo "  zsh       - Shell"
+	@echo "  vim       - Text editor"
+	@echo "  curl      - Download tool"
+	@echo ""
+	@echo "$(YELLOW)Package Manager Specific:$(NC)"
+	@if [ "$(OS)" = "darwin" ]; then \
+		echo "  brew      - Package manager (Homebrew)"; \
+	elif [ "$(DISTRO)" = "ubuntu" ]; then \
+		echo "  apt       - Package manager"; \
+	elif [ "$(DISTRO)" = "fedora" ]; then \
+		echo "  dnf       - Package manager"; \
+	elif [ "$(DISTRO)" = "arch" ]; then \
+		echo "  pacman    - Package manager"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Recommended CLI Tools:$(NC)"
+	@echo "  bat       - Better cat"
+	@echo "  eza       - Better ls"
+	@echo "  fd        - Better find"
+	@echo "  fzf       - Fuzzy finder"
+	@echo "  ripgrep   - Better grep"
+	@echo "  jq        - JSON processor"
+	@echo "  gh        - GitHub CLI"
+	@echo ""
+	@echo "$(YELLOW)Development Tools:$(NC)"
+	@echo "  node      - JavaScript runtime"
+	@echo "  python3   - Python interpreter"
+	@echo "  go        - Go compiler"
+	@echo "  rust      - Rust compiler"
+	@echo ""
+	@echo "$(CYAN)XDG Support:$(NC)"
+	@echo "  Most applications listed above support XDG Base Directory Specification"
+	@echo "  Run 'make xdg-doctor' to check XDG compliance status"
+
+## Generate system documentation
+docs:
+	@echo "$(GREEN)Generating system documentation...$(NC)"
+	@echo "# System Information" > SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "Generated on $(date) for $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## System Details" >> SYSTEM_INFO.md
+	@echo "- OS: $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "- Architecture: $(ARCH)" >> SYSTEM_INFO.md
+	@if [ "$(OS)" = "linux" ]; then \
+		echo "- Distribution: $(DISTRO)" >> SYSTEM_INFO.md; \
+	fi
+	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## XDG Base Directory Specification" >> SYSTEM_INFO.md
+	@echo "- XDG_CONFIG_HOME: $(XDG_CONFIG_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_DATA_HOME: $(XDG_DATA_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_CACHE_HOME: $(XDG_CACHE_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_STATE_HOME: $(XDG_STATE_HOME)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## Configuration Files" >> SYSTEM_INFO.md
+	@find config -name "*.zsh" -o -name "*.vim" -o -name "gitconfig" | while read file; do \
+		echo "- $file" >> SYSTEM_INFO.md; \
+	done
+	@echo "✅ System documentation generated as SYSTEM_INFO.md"
+
+## Restore from most recent backup
+restore:
+	@echo "$(GREEN)Restoring from backup...$(NC)"
+	@LATEST_BACKUP=$(ls -dt $(HOME)/.dotfiles-backup-* 2>/dev/null | head -n1); \
+	if [ -n "$LATEST_BACKUP" ]; then \
+		echo "Restoring from $LATEST_BACKUP"; \
+		cp -r $LATEST_BACKUP/* $(HOME)/; \
+		echo "✅ Restored from backup"; \
+	else \
+		echo "❌ No backup found"; \
+	fi
+
+## Show make targets (alternative help)  
+list:
+	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | cut -d: -f1 | sort | uniqd: $$(command -v $$cmd)"; \
 		else \
 			echo "❌ $$cmd: not found"; \
 		fi; \
@@ -245,8 +431,167 @@ doctor:
 		elif command -v fdfind >/dev/null 2>&1 && [ "$$cmd" = "fd" ]; then \
 			echo "✅ fd (as fdfind): $$(command -v fdfind)"; \
 		else \
-			echo "⚪ $$cmd: not installed"; \
+			echo "⚪ $cmd: not installed"; \
 		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW).dotfiles Status:$(NC)"
+	@make -s status
+
+## Show .dotfiles status
+status:
+	@echo ""
+	@echo "$(YELLOW)Symlinks:$(NC)"
+	@for link in \
+		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
+		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
+		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
+		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
+	; do \
+		target="${link%%:*}"; \
+		source="${link##*:}"; \
+		if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then \
+			echo "✅ $target → $source"; \
+		elif [ -e "$target" ]; then \
+			echo "⚠️  $target exists but is not linked"; \
+		else \
+			echo "❌ $target not found"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW)Git Repository:$(NC)"
+	@if [ -d .git ]; then \
+		echo "Branch: $(git branch --show-current 2>/dev/null || echo 'detached HEAD')"; \
+		if git remote | grep -q origin 2>/dev/null; then \
+			echo "Remote: $(git remote get-url origin)"; \
+		else \
+			echo "Remote: No remote configured"; \
+		fi; \
+		echo ""; \
+		echo "$(YELLOW)Working Tree Status:$(NC)"; \
+		if git status --porcelain | grep -q .; then \
+			git status --porcelain | head -5; \
+			file_count=$(git status --porcelain | wc -l); \
+			if [ "$file_count" -gt 5 ]; then \
+				remaining=$(( $file_count - 5 )); \
+				echo "... and $remaining more files"; \
+			fi; \
+		else \
+			echo "✅ Working tree is clean"; \
+		fi; \
+	else \
+		echo "❌ Not a git repository"; \
+	fi
+
+## Install Nerd Fonts (Agave Nerd Font)
+fonts:
+	@echo "$(GREEN)Installing Agave Nerd Font...$(NC)"
+	@if [ "$(OS_NAME)" = "macOS" ] || [ "$(OS_NAME)" = "Linux" ]; then \
+		wget -O /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+		mkdir -p $HOME/.local/share/fonts; \
+		unzip -o /tmp/Agave.zip -d $HOME/.local/share/fonts/AgaveNerdFont; \
+		fc-cache -fv; \
+		echo "$(YELLOW)Set your terminal font to 'Agave Nerd Font' in preferences.$(NC)"; \
+		if [ "$(OS_NAME)" = "macOS" ]; then \
+			open /System/Library/PreferencePanes/Fonts.prefPane || true; \
+		fi; \
+	else \
+		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences.$(NC)"; \
+	fi
+
+## Update ZSH plugins
+plugins:
+	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
+	@if [ -d "$(XDG_DATA_HOME)/zsh/plugins" ]; then \
+		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
+	elif [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
+		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
+	else \
+		echo "❌ No plugins directory found"; \
+	fi
+
+## Show dependencies
+deps:
+	@echo "$(GREEN)Dependencies for $(OS_NAME):$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Required:$(NC)"
+	@echo "  git       - Version control"
+	@echo "  zsh       - Shell"
+	@echo "  vim       - Text editor"
+	@echo "  curl      - Download tool"
+	@echo ""
+	@echo "$(YELLOW)Package Manager Specific:$(NC)"
+	@if [ "$(OS)" = "darwin" ]; then \
+		echo "  brew      - Package manager (Homebrew)"; \
+	elif [ "$(DISTRO)" = "ubuntu" ]; then \
+		echo "  apt       - Package manager"; \
+	elif [ "$(DISTRO)" = "fedora" ]; then \
+		echo "  dnf       - Package manager"; \
+	elif [ "$(DISTRO)" = "arch" ]; then \
+		echo "  pacman    - Package manager"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Recommended CLI Tools:$(NC)"
+	@echo "  bat       - Better cat"
+	@echo "  eza       - Better ls"
+	@echo "  fd        - Better find"
+	@echo "  fzf       - Fuzzy finder"
+	@echo "  ripgrep   - Better grep"
+	@echo "  jq        - JSON processor"
+	@echo "  gh        - GitHub CLI"
+	@echo ""
+	@echo "$(YELLOW)Development Tools:$(NC)"
+	@echo "  node      - JavaScript runtime"
+	@echo "  python3   - Python interpreter"
+	@echo "  go        - Go compiler"
+	@echo "  rust      - Rust compiler"
+	@echo ""
+	@echo "$(CYAN)XDG Support:$(NC)"
+	@echo "  Most applications listed above support XDG Base Directory Specification"
+	@echo "  Run 'make xdg-doctor' to check XDG compliance status"
+
+## Generate system documentation
+docs:
+	@echo "$(GREEN)Generating system documentation...$(NC)"
+	@echo "# System Information" > SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "Generated on $(date) for $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## System Details" >> SYSTEM_INFO.md
+	@echo "- OS: $(OS_NAME)" >> SYSTEM_INFO.md
+	@echo "- Architecture: $(ARCH)" >> SYSTEM_INFO.md
+	@if [ "$(OS)" = "linux" ]; then \
+		echo "- Distribution: $(DISTRO)" >> SYSTEM_INFO.md; \
+	fi
+	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## XDG Base Directory Specification" >> SYSTEM_INFO.md
+	@echo "- XDG_CONFIG_HOME: $(XDG_CONFIG_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_DATA_HOME: $(XDG_DATA_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_CACHE_HOME: $(XDG_CACHE_HOME)" >> SYSTEM_INFO.md
+	@echo "- XDG_STATE_HOME: $(XDG_STATE_HOME)" >> SYSTEM_INFO.md
+	@echo "" >> SYSTEM_INFO.md
+	@echo "## Configuration Files" >> SYSTEM_INFO.md
+	@find config -name "*.zsh" -o -name "*.vim" -o -name "gitconfig" | while read file; do \
+		echo "- $file" >> SYSTEM_INFO.md; \
+	done
+	@echo "✅ System documentation generated as SYSTEM_INFO.md"
+
+## Restore from most recent backup
+restore:
+	@echo "$(GREEN)Restoring from backup...$(NC)"
+	@LATEST_BACKUP=$(ls -dt $(HOME)/.dotfiles-backup-* 2>/dev/null | head -n1); \
+	if [ -n "$LATEST_BACKUP" ]; then \
+		echo "Restoring from $LATEST_BACKUP"; \
+		cp -r $LATEST_BACKUP/* $(HOME)/; \
+		echo "✅ Restored from backup"; \
+	else \
+		echo "❌ No backup found"; \
+	fi
+
+## Show make targets (alternative help)  
+list:
+	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | cut -d: -f1 | sort | uniqfi; \
 	done
 	@echo ""
 	@echo "$(YELLOW)Version Managers:$(NC)"

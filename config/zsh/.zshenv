@@ -1,22 +1,18 @@
-#!/usr/bin/env zsh
-# .zshenv in ZDOTDIR - sourced for all zsh invocations
+# ~/.zshenv - Environment variables for all zsh sessions
+# This file is always sourced by zsh, so it's perfect for XDG setup
 
-# XDG Base Directory specification (ensure they're set)
+# XDG Base Directory Specification
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 
-# Ensure ZDOTDIR is set (it should be, but just in case)
-export ZDOTDIR="${ZDOTDIR:-$HOME/.dotfiles/config/zsh}"
+# Set ZDOTDIR to use XDG
+export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 
-# Ensure ~/.local/bin is in PATH for user-installed tools
-if [[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Rust environment (if installed)
-[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
-
-# Create necessary directories
-[[ ! -d "$XDG_DATA_HOME/zsh" ]] && mkdir -p "$XDG_DATA_HOME/zsh"
-[[ ! -d "$XDG_CACHE_HOME" ]] && mkdir -p "$XDG_CACHE_HOME"
+# Ensure XDG directories exist
+[[ -d "$XDG_CONFIG_HOME" ]] || mkdir -p "$XDG_CONFIG_HOME"
+[[ -d "$XDG_DATA_HOME" ]] || mkdir -p "$XDG_DATA_HOME"
+[[ -d "$XDG_CACHE_HOME" ]] || mkdir -p "$XDG_CACHE_HOME"
+[[ -d "$XDG_STATE_HOME" ]] || mkdir -p "$XDG_STATE_HOME"
+[[ -d "$ZDOTDIR" ]] || mkdir -p "$ZDOTDIR"
