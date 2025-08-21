@@ -290,3 +290,6 @@ if is_macos; then
 else
     alias diskusage="du -sh * | sort -hr"
 fi
+
+# Brew update
+alias brewup='brew update && brew upgrade --greedy && brew upgrade --cask && brew cleanup && brew doctor && brew autoremove'
