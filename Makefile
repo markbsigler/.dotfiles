@@ -303,17 +303,35 @@ status:
 ## Install Nerd Fonts (Agave Nerd Font)
 fonts:
 	@echo "$(GREEN)Installing Agave Nerd Font...$(NC)"
-	@if [ "$(OS_NAME)" = "macOS" ] || [ "$(OS_NAME)" = "Linux" ]; then \
-		wget -O /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+	@if [ "$(OS_NAME)" = "macOS" ]; then \
+		if command -v brew >/dev/null 2>&1; then \
+			echo "Installing Agave Nerd Font via Homebrew..."; \
+			brew install --cask font-agave-nerd-font; \
+			echo "$(YELLOW)✅ Agave Nerd Font installed via Homebrew$(NC)"; \
+			echo "$(YELLOW)📝 To set in Terminal: Terminal > Preferences > Profiles > Text > Change Font$(NC)"; \
+			echo "$(YELLOW)📝 To set in iTerm2: iTerm2 > Preferences > Profiles > Text > Change Font$(NC)"; \
+			echo "$(YELLOW)📝 Font name: 'AgaveNerdFont-Regular' or 'Agave Nerd Font'$(NC)"; \
+		else \
+			echo "$(YELLOW)Homebrew not found. Installing manually...$(NC)"; \
+			echo "Downloading Agave Nerd Font..."; \
+			curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+			mkdir -p $$HOME/Library/Fonts; \
+			unzip -o /tmp/Agave.zip -d /tmp/AgaveNerdFont; \
+			mv /tmp/AgaveNerdFont/*.ttf $$HOME/Library/Fonts/ 2>/dev/null || true; \
+			rm -rf /tmp/Agave.zip /tmp/AgaveNerdFont; \
+			echo "$(YELLOW)✅ Agave Nerd Font installed manually$(NC)"; \
+		fi; \
+	elif [ "$(OS_NAME)" = "Linux" ]; then \
+		echo "Downloading Agave Nerd Font..."; \
+		curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
 		mkdir -p $$HOME/.local/share/fonts; \
 		unzip -o /tmp/Agave.zip -d $$HOME/.local/share/fonts/AgaveNerdFont; \
 		fc-cache -fv; \
-		echo "$(YELLOW)Set your terminal font to 'Agave Nerd Font' in preferences.$(NC)"; \
-		if [ "$(OS_NAME)" = "macOS" ]; then \
-			open /System/Library/PreferencePanes/Fonts.prefPane || true; \
-		fi; \
+		rm -f /tmp/Agave.zip; \
+		echo "$(YELLOW)✅ Agave Nerd Font installed$(NC)"; \
+		echo "$(YELLOW)📝 Set your terminal font to 'Agave Nerd Font' in preferences$(NC)"; \
 	else \
-		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences.$(NC)"; \
+		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads$(NC)"; \
 	fi
 
 ## Update ZSH plugins
@@ -321,10 +339,10 @@ plugins:
 	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
 	@if [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
 		for plugin in $(HOME)/.local/share/zsh/plugins/*; do \
-			if [ -d "$plugin/.git" ]; then \
-				plugin_name=$(basename "$plugin"); \
-				echo "Updating $plugin_name..."; \
-				(cd "$plugin" && git pull --quiet) && echo "✅ $plugin_name updated" || echo "❌ $plugin_name failed"; \
+			if [ -d "$$plugin/.git" ]; then \
+				plugin_name=$$(basename "$$plugin"); \
+				echo "Updating $$plugin_name..."; \
+				(cd "$$plugin" && git pull --quiet) && echo "✅ $$plugin_name updated" || echo "❌ $$plugin_name failed"; \
 			fi; \
 		done; \
 	else \
