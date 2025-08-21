@@ -320,9 +320,15 @@ fonts:
 plugins:
 	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
 	@if [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
-		zsh -c "source $(HOME)/.zshrc && update_plugins"; \
+		for plugin in $(HOME)/.local/share/zsh/plugins/*; do \
+			if [ -d "$plugin/.git" ]; then \
+				plugin_name=$(basename "$plugin"); \
+				echo "Updating $plugin_name..."; \
+				(cd "$plugin" && git pull --quiet) && echo "✅ $plugin_name updated" || echo "❌ $plugin_name failed"; \
+			fi; \
+		done; \
 	else \
-		echo "❌ No plugins directory found"; \
+		echo "❌ No plugins directory found. Run 'make install' first."; \
 	fi
 
 ## Show dependencies

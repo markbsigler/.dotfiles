@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cross-platform testing script for dotfiles
 
-set -eo pipefail  # Removed 'u' flag to allow unset variables
+set -o pipefail  # Removed 'e' and 'u' flags to allow errors and unset variables
 
 # Colors
 RED='\033[0;31m'
@@ -145,7 +145,7 @@ test_config_structure() {
     )
     
     local required_files=(
-        ".zshrc"
+        "config/zsh/.zshrc"
         "config/zsh/os-detection.zsh"
         "config/zsh/exports.zsh"
         "config/zsh/aliases.zsh"
@@ -189,7 +189,7 @@ test_symlinks() {
     
     local symlinks=(
         "$HOME/.config/zsh:$(pwd)/config/zsh"
-        "$HOME/.zshrc:$(pwd)/.zshrc"
+        "$HOME/.zshrc:$(pwd)/config/zsh/.zshrc"
     )
     
     local symlink_errors=0
@@ -227,6 +227,13 @@ test_platform_specific() {
     test_start "Platform-Specific Features"
     
     source config/zsh/os-detection.zsh
+    
+    # Load brew environment if available
+    if [[ -x "/opt/homebrew/bin/brew" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x "/usr/local/bin/brew" ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
     
     if is_macos; then
         # Test macOS specific features
@@ -417,16 +424,16 @@ test_performance() {
         local start_time=$(date +%s.%N)
         zsh -i -c exit >/dev/null 2>&1
         local end_time=$(date +%s.%N)
-        local run_time=$(echo "$end_time - $start_time" | bc -l 2>/dev/null || echo "1")
-        total_time=$(echo "$total_time + $run_time" | bc -l 2>/dev/null || echo "$total_time")
+        local run_time=$(echo "$end_time - $start_time" | bc -l 2>/dev/null || python3 -c "print($end_time - $start_time)" 2>/dev/null || echo "1")
+        total_time=$(echo "$total_time + $run_time" | bc -l 2>/dev/null || python3 -c "print($total_time + $run_time)" 2>/dev/null || echo "$total_time")
         info "Run $i: ${run_time}s"
     done
     
-    local avg_time=$(echo "scale=3; $total_time / $runs" | bc -l 2>/dev/null || echo "unknown")
+    local avg_time=$(echo "scale=3; $total_time / $runs" | bc -l 2>/dev/null || python3 -c "print(f'{$total_time / $runs:.3f}')" 2>/dev/null || echo "unknown")
     info "Average startup time: ${avg_time}s"
     
     # Warn if startup is slow (> 2 seconds)
-    if (( $(echo "$avg_time > 2.0" | bc -l 2>/dev/null || echo 0) )); then
+    if (( $(echo "$avg_time > 2.0" | bc -l 2>/dev/null || python3 -c "print(1 if float('$avg_time') > 2.0 else 0)" 2>/dev/null || echo 0) )); then
         warning "ZSH startup is slow (> 2s). Consider optimizing plugins."
     else
         info "ZSH startup time is good"
@@ -440,8 +447,8 @@ run_tests() {
     echo "🧪 Cross-Platform Dotfiles Testing"
     echo "=================================="
     
-    # Change to script directory
-    cd "$(dirname "${BASH_SOURCE[0]}")"
+    # Change to dotfiles root directory (parent of scripts directory)
+    cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")"
     
     # Run all tests
     test_config_structure
