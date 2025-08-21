@@ -1,5 +1,10 @@
 # ~/.config/zsh/completions.zsh - Enhanced completion settings
 
+# Add Homebrew completions to fpath (before compinit)
+if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
+    fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+fi
+
 # Modern completion system
 # Skip insecure directory warnings on Linux
 export ZSH_DISABLE_COMPFIX=true
