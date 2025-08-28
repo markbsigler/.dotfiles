@@ -292,4 +292,4 @@ else
 fi
 
 # Brew update
-alias brewup='brew update && brew upgrade --greedy && brew upgrade --cask && brew cleanup && brew doctor && brew autoremove'
+alias brewup='brew update && brew upgrade --greedy && brew cleanup && brew autoremove && brew doctor'
