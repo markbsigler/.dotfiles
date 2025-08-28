@@ -44,7 +44,7 @@ setopt HIST_EXPIRE_DUPS_FIRST  # Expire duplicate entries first
 setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 
 # Load configurations in order (os-detection must be first)
-for config in "$ZDOTDIR"/{os-detection,exports,package-manager,prompt,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
+for config in "$ZDOTDIR"/{os-detection,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
     [[ -r "$config" ]] && source "$config"
 done
 
@@ -102,6 +102,9 @@ fi
 
 # Load local configurations (machine-specific)
 [[ -f "$ZDOTDIR/local.zsh" ]] && source "$ZDOTDIR/local.zsh"
+
+# Load prompt last to ensure it doesn't get overridden
+[[ -f "$ZDOTDIR/prompt.zsh" ]] && source "$ZDOTDIR/prompt.zsh"
 
 # Set up completion menu bindings after everything is loaded
 if typeset -f setup_menuselect_bindings > /dev/null; then
