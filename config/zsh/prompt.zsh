@@ -1,3 +1,10 @@
+# ~/.config/zsh/prompt.zsh - Enhanced cross-platform prompt with git info
+
+# CRITICAL: Ensure prompt expansion is enabled (Terminal.app compatibility)
+setopt PROMPT_SUBST
+setopt PROMPT_PERCENT
+setopt PROMPT_BANG
+
 # Ensure OS detection functions are available (fallback for non-interactive shells)
 if ! command -v is_macos >/dev/null 2>&1; then
     ZSH_OS_DETECT_PATH="$HOME/.config/zsh/os-detection.zsh"
@@ -5,13 +12,6 @@ if ! command -v is_macos >/dev/null 2>&1; then
     [ -f "${ZDOTDIR:-$HOME/.config/zsh}/os-detection.zsh" ] && source "${ZDOTDIR:-$HOME/.config/zsh}/os-detection.zsh"
     [ -f "$(dirname ${(%):-%N})/os-detection.zsh" ] && source "$(dirname ${(%):-%N})/os-detection.zsh"
 fi
-# ~/.config/zsh/prompt.zsh - Enhanced cross-platform prompt with git info
-
-# CRITICAL: Ensure prompt expansion is enabled (Terminal.app compatibility)
-# These should be set in .zshenv, but double-check here for safety
-setopt PROMPT_SUBST
-setopt PROMPT_PERCENT
-setopt PROMPT_BANG
 
 # Git prompt function
 git_prompt_info() {
@@ -121,12 +121,12 @@ precmd() {
 # Vi mode indicator
 vi_mode_prompt_info() {
     case $KEYMAP in
-        vicmd) echo "%F{yellow}󰕷%f ";;  # Command mode
-        *) echo "%F{green}󰧱%f ";;      # Insert mode
+        vicmd) echo "%F{yellow}[N]%f ";;  # Normal mode
+        *) echo "%F{green}[I]%f ";;      # Insert mode
     esac
 }
 
-# OS/Platform indicator (subtle)
+# OS/Platform indicator (subtle) with proper Unicode support
 os_prompt_info() {
     # Skip if OS detection functions aren't available
     if ! command -v is_macos >/dev/null 2>&1; then
@@ -134,22 +134,22 @@ os_prompt_info() {
     fi
     
     if is_macos; then
-    echo "%F{240}%f"  # Apple logo
+        echo "%F{240}🍎%f"  # Apple emoji - more compatible than  symbol
     elif is_linux; then
-        if is_ubuntu; then
-            echo "%F{240}󰕈%f"  # Ubuntu logo
+        if command -v is_ubuntu >/dev/null 2>&1 && is_ubuntu; then
+            echo "%F{240}🐧%f"  # Penguin for Ubuntu
         else
-            echo "%F{240}󰌽%f"  # Linux logo
+            echo "%F{240}🐧%f"  # Penguin for Linux
         fi
-    elif is_windows; then
-        echo "%F{240}󰍲%f"  # Windows logo
+    elif command -v is_windows >/dev/null 2>&1 && is_windows; then
+        echo "%F{240}🪟%f"  # Window emoji for Windows
     fi
 }
 
 # SSH connection indicator
 ssh_prompt_info() {
     if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
-        echo "%F{yellow}󰢹%f "  # SSH icon
+        echo "%F{yellow}🔗%f "  # Link icon for SSH
     fi
 }
 
@@ -164,7 +164,7 @@ battery_prompt_info() {
     
     if is_macos; then
         if command -v pmset &> /dev/null; then
-            local battery_info=$(pmset -g batt | grep -o '[0-9]*%' | head -1)
+            local battery_info=$(pmset -g batt 2>/dev/null | grep -o '[0-9]*%' | head -1)
             if [[ -n "$battery_info" ]]; then
                 local level=${battery_info%\%}
                 if [[ $level -lt 20 ]]; then
@@ -174,7 +174,7 @@ battery_prompt_info() {
                 fi
             fi
         fi
-    elif is_linux; then
+    elif command -v is_linux >/dev/null 2>&1 && is_linux; then
         if [[ -f /sys/class/power_supply/BAT0/capacity ]]; then
             local level=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null)
             if [[ -n "$level" ]]; then
@@ -200,15 +200,15 @@ load_prompt_info() {
     if command -v uptime &> /dev/null; then
         local load=""
         if is_macos; then
-            load=$(uptime | sed 's/.*load averages: \([0-9.]*\).*/\1/')
-        elif is_linux; then
-            load=$(uptime | sed 's/.*load average: \([0-9.]*\),.*/\1/')
+            load=$(uptime 2>/dev/null | sed 's/.*load averages: \([0-9.]*\).*/\1/')
+        elif command -v is_linux >/dev/null 2>&1 && is_linux; then
+            load=$(uptime 2>/dev/null | sed 's/.*load average: \([0-9.]*\),.*/\1/')
         fi
         
         if [[ -n "$load" ]]; then
             # Only show if load is high (> number of CPUs)
             local cpu_count=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-            if (( $(echo "$load > $cpu_count" | bc -l 2>/dev/null || echo 0) )); then
+            if command -v bc &> /dev/null && (( $(echo "$load > $cpu_count" | bc -l 2>/dev/null || echo 0) )); then
                 echo "%F{red}📈 $load%f "
             fi
         fi
@@ -240,19 +240,21 @@ dir_prompt_info() {
 # Different styles based on whether we're in SSH or local
 if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
     # SSH prompt (more compact)
+    echo "SSH PROMPT"
     export PROMPT='$(ssh_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
 $(vi_mode_prompt_info)%# '
 else
-    # Local prompt (more detailed)
+    # Local prompt (more detailed) - FIXED: Added missing newline in PROMPT
+    echo "LOCAL PROMPT"
     export PROMPT='🌊 ╭─$(python_prompt_info)$(node_prompt_info)$(docker_prompt_info)$(k8s_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
-╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
+🌊 ╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
 fi
 
 # Right-side prompt with time and system info
 export RPS1='$(load_prompt_info)%F{240}%D{%H:%M:%S}%f'
 
 # Secondary prompt
-export PS2='%F{240}>%f '
+export PS2='%F{240}🌊 %f'
 
 # Prompt for spelling correction
 export SPROMPT='%F{red}Correct %F{yellow}%R%f %F{red}to %F{green}%r%f? [nyae] '
@@ -288,14 +290,26 @@ prompt_theme() {
             export PROMPT='[%n@%m %~]$ '
             export RPS1=''
             ;;
+        "wave")
+            # Wave-themed prompt with extra wave icons
+            if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
+                export PROMPT='🌊$(ssh_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
+🌊 $(vi_mode_prompt_info)%# '
+            else
+                export PROMPT='🌊 ╭─$(python_prompt_info)$(node_prompt_info)$(docker_prompt_info)$(k8s_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
+🌊 ╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
+            fi
+            export RPS1='🌊 $(load_prompt_info)%F{240}%D{%H:%M:%S}%f'
+            export PS2='🌊 %F{240}>%f '
+            ;;
         *)
-            # Reset to default
+            # Reset to default (wave theme)
             if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
                 export PROMPT='$(ssh_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
 $(vi_mode_prompt_info)%# '
             else
-                export PROMPT='╭─$(python_prompt_info)$(node_prompt_info)$(docker_prompt_info)$(k8s_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
-╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
+                export PROMPT='🌊 ╭─$(python_prompt_info)$(node_prompt_info)$(docker_prompt_info)$(k8s_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
+🌊 ╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
             fi
             export RPS1='$(load_prompt_info)%F{240}%D{%H:%M:%S}%f'
             ;;
@@ -315,4 +329,18 @@ prompt_debug() {
     echo "  Battery: $(battery_prompt_info)"
     echo "  Load: $(load_prompt_info)"
     echo "  Vi mode: $(vi_mode_prompt_info)"
+    echo "  Current PROMPT: $PROMPT"
+    echo "  Current RPS1: $RPS1"
+    echo "  Current PS2: $PS2"
+}
+
+# Function to test prompt display
+prompt_test() {
+    echo "Testing prompt appearance..."
+    echo "Wave icon: 🌊"
+    echo "Apple icon: 🍎"
+    echo "Current prompt will look like:"
+    # Simulate a prompt line
+    local test_prompt=$(echo "$PROMPT" | sed 's/%F{[^}]*}//g; s/%f//g; s/%[a-zA-Z#~]//g; s/\$([^)]*)//g')
+    echo "$test_prompt"
 }
