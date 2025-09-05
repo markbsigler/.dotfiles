@@ -1,1 +1,0 @@
-ls -la /etc/z* 2>/dev/null; echo '---'; ls -la ~/.z* 2>/dev/null

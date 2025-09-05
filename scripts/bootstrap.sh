@@ -154,7 +154,7 @@ clone_dotfiles() {
     
     # Try SSH first, fall back to HTTPS
     if ssh -T git@github.com >/dev/null 2>&1; then
-        git clone "git@github.com:$(echo "$REPO_URL" | sed 's|https://github.com/||').git" "$DOTFILES_DIR"
+        git clone "git@github.com:${REPO_URL#https://github.com/}.git" "$DOTFILES_DIR"
     else
         git clone "$REPO_URL" "$DOTFILES_DIR"
     fi

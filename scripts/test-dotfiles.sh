@@ -337,7 +337,9 @@ test_integration() {
         warning "Dotfiles not installed, testing repository files directly"
         
         # Set up test environment similar to actual .zshrc
-        export ZDOTDIR="$(pwd)/config/zsh"
+        local zdotdir
+        zdotdir="$(pwd)/config/zsh"
+        export ZDOTDIR="$zdotdir"
         export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
         export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
         
@@ -421,15 +423,19 @@ test_performance() {
     local runs=3
     
     for i in $(seq 1 $runs); do
-        local start_time=$(date +%s.%N)
+        local start_time
+        local end_time
+        local run_time
+        start_time=$(date +%s.%N)
         zsh -i -c exit >/dev/null 2>&1
-        local end_time=$(date +%s.%N)
-        local run_time=$(echo "$end_time - $start_time" | bc -l 2>/dev/null || python3 -c "print($end_time - $start_time)" 2>/dev/null || echo "1")
+        end_time=$(date +%s.%N)
+        run_time=$(echo "$end_time - $start_time" | bc -l 2>/dev/null || python3 -c "print($end_time - $start_time)" 2>/dev/null || echo "1")
         total_time=$(echo "$total_time + $run_time" | bc -l 2>/dev/null || python3 -c "print($total_time + $run_time)" 2>/dev/null || echo "$total_time")
         info "Run $i: ${run_time}s"
     done
     
-    local avg_time=$(echo "scale=3; $total_time / $runs" | bc -l 2>/dev/null || python3 -c "print(f'{$total_time / $runs:.3f}')" 2>/dev/null || echo "unknown")
+    local avg_time
+    avg_time=$(echo "scale=3; $total_time / $runs" | bc -l 2>/dev/null || python3 -c "print(f'{$total_time / $runs:.3f}')" 2>/dev/null || echo "unknown")
     info "Average startup time: ${avg_time}s"
     
     # Warn if startup is slow (> 2 seconds)
@@ -448,7 +454,7 @@ run_tests() {
     echo "=================================="
     
     # Change to dotfiles root directory (parent of scripts directory)
-    cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")"
+    cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" || exit
     
     # Run all tests
     test_config_structure

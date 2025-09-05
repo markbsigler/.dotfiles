@@ -264,6 +264,7 @@ status:
 		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
 		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
 		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
+		"$(HOME)/.config/nvim:$(DOTFILES_DIR)/config/nvim" \
 	; do \
 		target="$${link%%:*}"; \
 		source="$${link##*:}"; \

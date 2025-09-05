@@ -1,1 +1,0 @@
-echo 'Testing sourcing...' && source ~/.zshenv && echo 'ZDOTDIR after sourcing ~/.zshenv: $ZDOTDIR'

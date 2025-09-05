@@ -176,7 +176,8 @@ backup_file() {
             info "Created backup directory: $BACKUP_DIR"
         fi
         
-        local backup_path="$BACKUP_DIR/$(basename "$file")"
+        local backup_path
+        backup_path="$BACKUP_DIR/$(basename "$file")"
         if [[ "$DRY_RUN" == false ]]; then
             cp -r "$file" "$backup_path"
             success "Backed up $file to $backup_path"
@@ -203,10 +204,8 @@ create_symlink() {
         fi
     fi
     
-    # Skip if in update mode and target doesn't exist as a symlink
-    if [[ "$UPDATE_MODE" == true ]] && [[ ! -L "$target" ]]; then
-        return 0
-    fi
+    # In update mode, if target doesn't exist, create it
+    # If target exists but is not a symlink, we'll handle it below
     
     # In update mode, if target exists but points to wrong location, update it
     if [[ "$UPDATE_MODE" == true ]] && [[ -L "$target" ]]; then
@@ -367,7 +366,8 @@ link_configs() {
         if [[ ! -f "$file" ]]; then
             if [[ "$DRY_RUN" == false ]]; then
                 # Only create directory if it's not a symlink (to avoid conflicts)
-                local dir_path="$(dirname "$file")"
+                local dir_path
+                dir_path="$(dirname "$file")"
                 if [[ ! -L "$dir_path" ]]; then
                     mkdir -p "$dir_path"
                 fi
@@ -455,15 +455,14 @@ validate_installation() {
     # Add optional links if they exist
     [[ -f "$DOTFILES_DIR/config/git/gitconfig" ]] && links+=("$HOME/.gitconfig:$DOTFILES_DIR/config/git/gitconfig")
     [[ -f "$DOTFILES_DIR/config/vim/vimrc" ]] && links+=("$HOME/.vimrc:$DOTFILES_DIR/config/vim/vimrc")
+    [[ -d "$DOTFILES_DIR/config/nvim" ]] && links+=("$HOME/.config/nvim:$DOTFILES_DIR/config/nvim")
     
     for link in "${links[@]}"; do
         local target="${link%:*}"
         local source="${link#*:}"
         
-        # In update mode, only validate existing symlinks
-        if [[ "$UPDATE_MODE" == true ]] && [[ ! -L "$target" ]]; then
-            continue
-        fi
+        # In update mode, validate all expected symlinks (create missing ones)
+        # This allows update mode to create missing symlinks
         
         if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$source" ]]; then
             success "✓ $target → $source"
@@ -541,8 +540,10 @@ EOF
     echo "Installation started at $(date)" > "$LOG_FILE"
     
     # Detect and display system info
-    local os=$(detect_os)
-    local arch=$(detect_arch)
+    local os
+    local arch
+    os=$(detect_os)
+    arch=$(detect_arch)
     local distro=""
     
     info "Detected system: $os/$arch"

@@ -1,1 +1,0 @@
-echo "Current shell: $0" && echo "ZDOTDIR: $ZDOTDIR" && echo "XDG_CONFIG_HOME: $XDG_CONFIG_HOME" && echo "PATH (first part): $(echo $PATH | cut -d: -f1-3)" && echo "ZSHRC_LOADED: $ZSHRC_LOADED"

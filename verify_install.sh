@@ -16,7 +16,7 @@ for file in .gitconfig .vimrc .zshrc; do
 done
 
 # Check if backup was created
-latest_backup=$(ls -1dt $HOME/.dotfiles-backup-* 2>/dev/null | head -1)
+latest_backup=$(ls -1dt "$HOME"/.dotfiles-backup-* 2>/dev/null | head -1)
 if [[ -n "$latest_backup" ]]; then
     echo "✅ Backup created: $(basename "$latest_backup")"
     echo "   Contains: $(ls "$latest_backup" 2>/dev/null | wc -l) files"

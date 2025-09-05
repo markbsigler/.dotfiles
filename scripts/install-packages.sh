@@ -366,7 +366,8 @@ install_modern_tools_ubuntu() {
     # Install eza (better ls) - from GitHub releases
     if ! command_exists eza; then
         local eza_version="0.18.2"
-        local arch="$(detect_arch)"
+        local arch
+        arch="$(detect_arch)"
         [[ "$arch" == "amd64" ]] && arch="x86_64"
         local eza_url="https://github.com/eza-community/eza/releases/download/v${eza_version}/eza_${arch}-unknown-linux-gnu.tar.gz"
         wget -O /tmp/eza.tar.gz "$eza_url"
