@@ -1,3 +1,13 @@
+# Loader file: keep primary entrypoint in ~/.config/zsh
+
+# Source all .zsh files in ~/.config/zsh (except this file when symlinked here)
+ZSH_CONFIG_DIR="$HOME/.config/zsh"
+if [ -d "$ZSH_CONFIG_DIR" ]; then
+    for f in "$ZSH_CONFIG_DIR"/*.zsh; do
+        [ -r "$f" ] && [ -f "$f" ] && . "$f"
+    done
+fi
+
 #!/usr/bin/env zsh
 # .zshrc in ZDOTDIR - Interactive shell configuration
 

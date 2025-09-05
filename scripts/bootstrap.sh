@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Configuration
-readonly REPO_URL="https://github.com/markbsigler/dotfiles.git"
+readonly REPO_URL="https://github.com/markbsigler/.dotfiles.git"
 readonly DOTFILES_DIR="$HOME/.dotfiles"
 
 # Colors for output
@@ -247,13 +247,16 @@ main() {
 EOF
     echo
     
-    # Confirmation
-    read -p "Do you want to continue with the bootstrap process? (y/N): " -n 1 -r
-    echo
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        info "Bootstrap cancelled"
-        exit 0
+    # Confirmation (skipped if DOTFILES_NONINTERACTIVE=true)
+    if [[ "${DOTFILES_NONINTERACTIVE:-false}" != "true" ]]; then
+        read -p "Do you want to continue with the bootstrap process? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            info "Bootstrap cancelled"
+            exit 0
+        fi
+    else
+        info "Non-interactive mode: proceeding without prompt"
     fi
     
     # Check if we're running in a supported environment
@@ -265,8 +268,13 @@ EOF
     info "Starting bootstrap process..."
     
     install_prerequisites
-    configure_git
-    setup_ssh_key
+    # Optional interactive steps (skipped if non-interactive)
+    if [[ "${DOTFILES_NONINTERACTIVE:-false}" != "true" ]]; then
+        configure_git
+        setup_ssh_key
+    else
+        info "Skipping interactive git/SSH setup (DOTFILES_NONINTERACTIVE=true)"
+    fi
     clone_dotfiles
     install_dotfiles
     final_setup

@@ -1,42 +1,38 @@
 #!/usr/bin/env bash
-# Detect if a Nerd Font is installed (checks for Agave Nerd Font by default)
+# Cross-platform package installation script
+
+set -euo pipefail
+# Font helpers (kept here; could be split into fonts.sh and sourced)
 has_nerd_font() {
-    fc-list | grep -i "Nerd Font" | grep -q "FiraCode" && return 0
+    # Detect any Nerd Font, prefer checking for Agave
+    fc-list | grep -qi "Agave Nerd Font" && return 0
+    fc-list | grep -qi "Nerd Font" && return 0
     return 1
 }
 
-# Install Nerd Font (Agave) on macOS using Homebrew
 install_nerd_font_macos() {
-    # Check if Agave Nerd Font is already installed
-    if [[ $(brew list --cask 2>/dev/null | grep -c font-agave-nerd-font) -eq 1 ]]; then
+    if brew list --cask 2>/dev/null | grep -q '^font-agave-nerd-font$'; then
         success "Nerd Font (Agave) is already installed."
         return 0
     fi
     info "Installing Agave Nerd Font via Homebrew..."
     brew install --cask font-agave-nerd-font
-    success "Agave Nerd Font installed! Please set it in your terminal preferences."
 }
 
-# Install Nerd Font (Agave) on Linux (downloads from GitHub)
 install_nerd_font_linux() {
     if has_nerd_font; then
-        success "Nerd Font (Agave) is already installed."
+        success "Nerd Font appears installed."
         return 0
     fi
     info "Installing Agave Nerd Font..."
     local version="3.1.1"
     local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${version}/Agave.zip"
-    mkdir -p ~/.local/share/fonts
-    wget -O /tmp/Agave.zip "$url"
-    unzip -o /tmp/Agave.zip -d ~/.local/share/fonts/AgaveNerdFont
-    fc-cache -fv
-    rm /tmp/Agave.zip
-    success "Agave Nerd Font installed! Please set it in your terminal preferences."
+    mkdir -p "$HOME/.local/share/fonts"
+    wget -q -O /tmp/Agave.zip "$url"
+    unzip -oq /tmp/Agave.zip -d "$HOME/.local/share/fonts/AgaveNerdFont"
+    fc-cache -f >/dev/null 2>&1 || true
+    rm -f /tmp/Agave.zip
 }
-#!/usr/bin/env bash
-# Cross-platform package installation script
-
-set -euo pipefail
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -240,17 +236,12 @@ install_packages_macos() {
     # Install Nerd Font
     install_nerd_font_macos
     
-    # Ask about optional packages
-    info "Optional packages available:"
-    for package in "${optional_packages[@]}"; do
-        if ! command_exists "$package"; then
-            read -p "Install $package? (y/N): " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                brew install "$package"
-            fi
-        fi
-    done
+    # Optional packages: install if DOTFILES_INSTALL_OPTIONALS=true
+    if [[ "${DOTFILES_INSTALL_OPTIONALS:-false}" == "true" ]]; then
+        for package in "${optional_packages[@]}"; do
+            install_if_missing "$package" "brew install $package"
+        done
+    fi
     
     success "macOS package installation completed!"
 }
@@ -581,19 +572,15 @@ install_version_managers() {
 install_dev_tools() {
     info "Installing additional development tools..."
     
-    # Install Docker (if requested)
-    read -p "Install Docker? (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Optional: Docker install if DOTFILES_INSTALL_DOCKER=true
+    if [[ "${DOTFILES_INSTALL_DOCKER:-false}" == "true" ]]; then
         if [[ "$(detect_os)" == "macos" ]]; then
-            info "Please install Docker Desktop from https://www.docker.com/products/docker-desktop"
+            warning "Install Docker Desktop manually: https://www.docker.com/products/docker-desktop"
         elif [[ "$(detect_linux_distro)" == "ubuntu" ]]; then
-            # Install Docker on Ubuntu
             curl -fsSL https://get.docker.com -o get-docker.sh
             sudo sh get-docker.sh
-            sudo usermod -aG docker "$USER"
-            rm get-docker.sh
-            success "Docker installed! Please log out and back in to use Docker without sudo."
+            sudo usermod -aG docker "$USER" || true
+            rm -f get-docker.sh
         fi
     fi
     
@@ -618,29 +605,31 @@ main() {
     info "Architecture: $(detect_arch)"
     
     case "$os" in
-        "macos")
+        macos)
             install_packages_macos
             ;;
-        "linux")
+        linux)
             distro=$(detect_linux_distro)
             info "Detected Linux distribution: $distro"
-            
-            case "$os" in
-                macos)
-                    install_packages_macos
-                    ;;
-                linux)
+            case "$distro" in
+                ubuntu|debian)
                     install_packages_ubuntu
                     ;;
-                windows)
-                    install_nerd_font_windows
-                    warning "Windows/WSL detected. Please install packages manually."
+                fedora|centos|rhel)
+                    install_packages_fedora
+                    ;;
+                arch|manjaro)
+                    install_packages_arch
                     ;;
                 *)
-                    error "Unsupported OS: $os"
-                    exit 1
+                    warning "Unsupported Linux distro '$distro'. Defaulting to Ubuntu/Debian flow."
+                    install_packages_ubuntu
                     ;;
             esac
+            ;;
+        windows)
+            install_nerd_font_windows
+            warning "Windows/WSL detected. Please install packages manually."
             ;;
         *)
             error "Unsupported operating system: $os"

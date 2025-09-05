@@ -103,7 +103,7 @@ OPTIONS:
     -d, --dry-run       Show what would be done without actually doing it
     -f, --force         Force overwrite existing files (skip backup)
     -v, --verbose       Verbose output
-        -u, --update        Update existing symlinks only (don't create new ones)
+    -u, --update        Update existing symlinks only (don't create new ones)
     -s, --skip-packages Skip package installation
     -t, --test          Run tests after installation
 
@@ -113,10 +113,6 @@ EXAMPLES:
     $0 --force          # Force overwrite existing files
     $0 --skip-packages  # Install configs only
 
-SUPPORTED PLATFORMS:
-    - macOS (Intel & Apple Silicon)
-    - Ubuntu/Debian (apt)
-    - Fedora/CentOS (dnf/yum) 
 SUPPORTED PLATFORMS:
     - macOS (Intel & Apple Silicon)
     - Ubuntu/Debian (apt)
@@ -322,13 +318,13 @@ link_configs() {
 
     # ZSH configuration
     if [[ -d "$DOTFILES_DIR/config/zsh" ]]; then
-        # Always forcibly remove before symlinking, with a short delay to avoid race conditions
-        rm -rf "$HOME/.config/zsh"
-        sleep 1
-        # If .config/zsh existed and was not a symlink, back it up
+        # Backup before removal if target exists and is not a symlink
         if [[ -e "$HOME/.config/zsh" && ! -L "$HOME/.config/zsh" ]]; then
-            mv "$HOME/.config/zsh" "$HOME/.config/zsh.backup.$(date +%s)"
-            info "Backed up and removed existing $HOME/.config/zsh"
+            backup_file "$HOME/.config/zsh"
+        fi
+        # Remove any existing file/dir/symlink
+        if [[ -e "$HOME/.config/zsh" || -L "$HOME/.config/zsh" ]]; then
+            rm -rf "$HOME/.config/zsh"
         fi
         create_symlink "$DOTFILES_DIR/config/zsh" "$HOME/.config/zsh"
     fi
