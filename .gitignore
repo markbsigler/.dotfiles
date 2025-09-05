@@ -25,6 +25,9 @@ config/zsh/.zcompdump
 config/zsh/.zsh_history
 .zsh_history
 
+# ZSH session files (ephemeral)
+config/zsh/.zsh_sessions/
+
 # Vim temporary files
 *.swp
 *.swo
