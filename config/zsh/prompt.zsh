@@ -1,5 +1,14 @@
 # ~/.config/zsh/prompt.zsh - Enhanced cross-platform prompt with git info
 
+# Source only in interactive Zsh shells
+if [ -n "${BASH_VERSION-}" ] || [ -z "${ZSH_VERSION-}" ]; then
+    return 0
+fi
+case $- in
+    *i*) ;; # interactive
+    *) return 0 ;;
+esac
+
 # CRITICAL: Ensure prompt expansion is enabled (Terminal.app compatibility)
 setopt PROMPT_SUBST
 setopt PROMPT_PERCENT
@@ -240,12 +249,10 @@ dir_prompt_info() {
 # Different styles based on whether we're in SSH or local
 if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
     # SSH prompt (more compact)
-    echo "SSH PROMPT"
     export PROMPT='$(ssh_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
 $(vi_mode_prompt_info)%# '
 else
     # Local prompt (more detailed) - FIXED: Added missing newline in PROMPT
-    echo "LOCAL PROMPT"
     export PROMPT='🌊 ╭─$(python_prompt_info)$(node_prompt_info)$(docker_prompt_info)$(k8s_prompt_info)%F{cyan}%n@%m%f:$(dir_prompt_info)$(git_prompt_info)
 🌊 ╰─$(battery_prompt_info)${cmd_exec_time}$(vi_mode_prompt_info)$(os_prompt_info) %# '
 fi
