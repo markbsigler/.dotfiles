@@ -1,9 +1,19 @@
 # Loader file: keep primary entrypoint in ~/.config/zsh
 
-# Source all .zsh files in ~/.config/zsh (except this file when symlinked here)
+# Deterministic sourcing order to ensure dependencies are loaded
 ZSH_CONFIG_DIR="$HOME/.config/zsh"
 if [ -d "$ZSH_CONFIG_DIR" ]; then
-    for f in "$ZSH_CONFIG_DIR"/*.zsh; do
+    for f in \
+        "$ZSH_CONFIG_DIR/os-detection.zsh" \
+        "$ZSH_CONFIG_DIR/exports.zsh" \
+        "$ZSH_CONFIG_DIR/aliases.zsh" \
+        "$ZSH_CONFIG_DIR/functions.zsh" \
+        "$ZSH_CONFIG_DIR/plugins.zsh" \
+        "$ZSH_CONFIG_DIR/version-managers.zsh" \
+        "$ZSH_CONFIG_DIR/ssh-config.zsh" \
+        "$ZSH_CONFIG_DIR/package-manager.zsh" \
+        "$ZSH_CONFIG_DIR/prompt.zsh" \
+        "$ZSH_CONFIG_DIR/local.zsh"; do
         [ -r "$f" ] && [ -f "$f" ] && . "$f"
     done
 fi
