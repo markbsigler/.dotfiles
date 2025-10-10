@@ -135,3 +135,4 @@ fi
 # if [[ -n "${ZSH_PROF:-}" ]]; then
 #     zprof
 # fi
+export TMPDIR=$HOME/tmp
