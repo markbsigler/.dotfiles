@@ -1,4 +1,4 @@
-# Loader file: keep primary entrypoint in ~/.config/zsh
+:# Loader file: keep primary entrypoint in ~/.config/zsh
 
 # Deterministic sourcing order to ensure dependencies are loaded
 ZSH_CONFIG_DIR="$HOME/.config/zsh"
@@ -139,3 +139,5 @@ fi
 export NVM_DIR="$HOME/.config/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+=======
+export TMPDIR=$HOME/tmp

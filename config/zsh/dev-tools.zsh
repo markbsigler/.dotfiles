@@ -224,3 +224,80 @@ alias gdc='git diff --cached'
 alias gl='git log --oneline -10'
 alias gla='git log --oneline --all --graph -10'
 alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+
+# Aider - AI pair programming with local Ollama
+aider() {
+    # Check if Ollama is running
+    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+        echo "⚠️  Ollama is not running. Start it with: ollama serve"
+        return 1
+    fi
+
+    # Run aider with config file
+    command aider --config ~/.aider.conf.yml "$@"
+}
+
+# Quick aider for current project
+aider-project() {
+    echo "🚀 Starting Aider for $(basename $(pwd))"
+    aider .
+}
+
+# Aider with specific model
+aider-model() {
+    local model="${1:-ollama/codellama:34b}"
+    echo "🤖 Starting Aider with model: $model"
+    command aider --model "$model" --config ~/.aider.conf.yml
+}
+
+# List available Ollama models
+ollama-list() {
+    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+        echo "⚠️  Ollama is not running"
+        return 1
+    fi
+
+    echo "Available Ollama models:"
+    curl -s http://localhost:11434/api/tags | \
+        python3 -c "import sys, json; [print(f'  • {m[\"name\"]}') for m in json.load(sys.stdin).get('models', [])]"
+}
+
+# Start Ollama service
+ollama-start() {
+    if command -v ollama &> /dev/null; then
+        echo "🚀 Starting Ollama..."
+        ollama serve &
+
+        # Wait for Ollama to be ready
+        local max_attempts=30
+        local attempt=0
+
+        while [ $attempt -lt $max_attempts ]; do
+            if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+                echo "✅ Ollama is ready on http://localhost:11434"
+                ollama-list
+                return 0
+            fi
+            sleep 1
+            attempt=$((attempt + 1))
+        done
+
+        echo "❌ Ollama failed to start"
+        return 1
+    else
+        echo "❌ Ollama is not installed"
+        return 1
+    fi
+}
+
+# Pull a specific model
+ollama-pull() {
+    local model="${1:-codellama:34b}"
+    echo "📥 Pulling model: $model"
+    ollama pull "$model"
+}
+
+# Aliases for quick access
+alias aid="aider"
+alias aid-proj="aider-project"
+alias ollama-run="ollama serve"
