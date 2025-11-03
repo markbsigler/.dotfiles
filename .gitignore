@@ -73,6 +73,14 @@ PERSONAL.md
 .env.production
 .env.development
 
+# Secrets directory and files
+config/secrets/
+config/zsh/secrets/env
+config/zsh/secrets/work.env
+config/zsh/secrets/personal.env
+.secrets/
+secrets/env
+
 # SSH keys and certificates
 *.pem
 *.key
