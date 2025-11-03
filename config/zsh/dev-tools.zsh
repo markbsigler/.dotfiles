@@ -233,8 +233,8 @@ aider() {
         return 1
     fi
 
-    # Run aider with config file
-    command aider --config ~/.aider.conf.yml "$@"
+    # Run aider with config file from dotfiles
+    command aider --config ~/.dotfiles/config/aider/aider.conf.yml "$@"
 }
 
 # Quick aider for current project
@@ -247,7 +247,7 @@ aider-project() {
 aider-model() {
     local model="${1:-ollama/codellama:34b}"
     echo "🤖 Starting Aider with model: $model"
-    command aider --model "$model" --config ~/.aider.conf.yml
+    command aider --model "$model" --config ~/.dotfiles/config/aider/aider.conf.yml
 }
 
 # List available Ollama models

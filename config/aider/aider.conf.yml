@@ -2,18 +2,10 @@
 # Optimized for M4 MacBook Pro 48GB with CodeLlama 34B via Ollama
 
 # Model configuration - using local Ollama instance
-model: ollama/codellama:34b
+# You have codellama:latest (7B) and gpt-oss:20b available
+model: ollama/codellama:latest
 
-# Ollama API endpoint
-api-base: http://localhost:11434/v1
-
-# Model parameters
-max-tokens: 4096
-temperature: 0.2
-top-p: 0.9
-top-k: 40
-
-# Edit format
+# Edit format for diffs
 edit-format: udiff
 
 # Editor configuration
@@ -21,17 +13,12 @@ editor: code --wait
 
 # Auto-commit settings
 auto-commits: true
-auto-commit-prefix: "aider:"
 
 # File handling
-auto-adds: true
 gitignore: true
 
-# Context limits
-max-context-tokens: 2048
-
-# Timeout
-request-timeout: 60
+# Output and display
+show-diffs: true
 
 # Skip confirmation prompts
 yes-always: false
