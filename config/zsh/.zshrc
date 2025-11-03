@@ -44,7 +44,8 @@ setopt HIST_EXPIRE_DUPS_FIRST  # Expire duplicate entries first
 setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 
 # Load configurations in order (os-detection must be first)
-for config in "$ZDOTDIR"/{os-detection,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
+# secrets.zsh loads early to make secrets available to other configs
+for config in "$ZDOTDIR"/{os-detection,secrets,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
     [[ -r "$config" ]] && source "$config"
 done
 
