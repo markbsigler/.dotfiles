@@ -1,57 +1,13 @@
 # macOS-specific Git configuration
-# =============================================================================
-# Configuration specific to macOS environments
-# Included via gitconfig when gitdir is under /Users/
-# =============================================================================
-
-# =============================================================================
-# Credential Management
-# =============================================================================
 [credential]
-	# Use macOS Keychain for storing credentials securely
 	helper = osxkeychain
 
-[credential "https://github.com"]
-	helper = osxkeychain
-
-[credential "https://gitlab.com"]
-	helper = osxkeychain
-
-# =============================================================================
-# Core Settings
-# =============================================================================
+# macOS-specific aliases and settings
 [core]
-	# macOS file systems are typically case-insensitive
-	ignorecase = true
-	
-	# Trust file modes (important for macOS)
-	filemode = false
+	excludesfile = ~/.config/git/gitignore-macos
 
-# =============================================================================
-# Diff/Merge Tools (Optional macOS tools)
-# =============================================================================
-# Uncomment if you prefer macOS-specific tools
+[diff]
+	tool = opendiff
 
-# [diff]
-#	tool = opendiff
-
-# [difftool "opendiff"]
-#	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-
-# [merge]
-#	tool = opendiff
-
-# [mergetool "opendiff"]
-#	cmd = opendiff \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-#	trustExitCode = true
-
-# =============================================================================
-# macOS-specific Performance
-# =============================================================================
-[core]
-	# Improve performance on APFS (macOS)
-	preloadindex = true
-	fscache = true
-	
-	# Use fsmonitor for large repos (if available)
-	# fsmonitor = true
+[merge]
+	tool = opendiff

@@ -1,55 +1,14 @@
 # Linux-specific Git configuration
-# =============================================================================
-# Configuration specific to Linux environments
-# Included via gitconfig when gitdir is under /home/
-# =============================================================================
-
-# =============================================================================
-# Credential Management
-# =============================================================================
 [credential]
-	# Use cache helper with 1 hour timeout (default for headless systems)
 	helper = cache --timeout=3600
-	
-	# For systems with GUI/desktop environment, uncomment libsecret:
-	# helper = /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret
-	
-	# For systems with Git Credential Manager installed:
-	# helper = /usr/local/bin/git-credential-manager
+	# Alternative for GUI systems: helper = libsecret
 
-[credential "https://github.com"]
-	# GitHub-specific credential helper
-	# Uncomment if using GitHub CLI (gh)
-	# helper = !gh auth git-credential
-	helper = cache --timeout=3600
-
-[credential "https://gitlab.com"]
-	helper = cache --timeout=3600
-
-# =============================================================================
-# Core Settings
-# =============================================================================
+# Linux-specific settings
 [core]
-	# Linux file systems are typically case-sensitive
-	ignorecase = false
-	
-	# Trust file modes (important for Linux)
-	filemode = true
-	
-	# Improve performance on large repos
-	preloadindex = true
+	excludesfile = ~/.config/git/gitignore-linux
 
-# =============================================================================
-# Linux-specific Performance
-# =============================================================================
-[pack]
-	# Use more threads on Linux systems
-	threads = 0
-	
-[core]
-	# Use sparse checkout for large repos
-	# Uncomment if working with very large repositories
-	# sparseCheckout = true
-	
-	# Improve performance with many files
-	fscache = true
+[diff]
+	tool = vimdiff
+
+[merge]
+	tool = vimdiff

@@ -1,140 +1,78 @@
-# Git Configuration
-# =============================================================================
-# Cross-platform git configuration for macOS and Linux
-# =============================================================================
+# Git Configuration - Cross-Platform (macOS & Linux)
+# See: https://git-scm.com/docs/git-config
 
-# =============================================================================
-# User Identity
-# =============================================================================
 [user]
 	email = markbsigler@gmail.com
 	name = Mark B. Sigler
-	# Uncomment to sign commits with GPG
+	# Enable signing commits (configure GPG key separately)
 	# signingkey = YOUR_GPG_KEY_ID
 
-# =============================================================================
-# Core Settings
-# =============================================================================
 [core]
-	# Editor (vim is available on all platforms)
 	editor = vim
-	
-	# Line ending handling (cross-platform)
-	# input = convert CRLF to LF on commit (safe for cross-platform)
+	# Handle line endings cross-platform
 	autocrlf = input
-	
-	# Better diff output
-	pager = less -FRX
-	
-	# Exclude file (global gitignore)
-	excludesfile = ~/.config/git/gitignore
-	
-	# File mode changes (important for cross-platform)
-	filemode = true
-	
-	# Whitespace settings
+	# Don't convert LF to CRLF on checkout (safe for Unix/macOS/WSL)
+	eol = lf
+	# Treat trailing whitespace as error
 	whitespace = trailing-space,space-before-tab
+	# Use delta if available, fall back to less
+	pager = delta --dark --side-by-side 2>/dev/null || less -R
+	# XDG-compliant config location
+	excludesfile = ~/.config/git/ignore
 
-# =============================================================================
-# Initialization
-# =============================================================================
 [init]
 	defaultBranch = main
 
-# =============================================================================
-# Branch Settings
-# =============================================================================
-[branch]
-	# Automatically set up remote tracking
-	autoSetupMerge = always
-	autoSetupRebase = always
-
-# =============================================================================
-# Pull/Fetch Settings
-# =============================================================================
 [pull]
-	# Use merge instead of rebase (safer default)
 	rebase = false
-	
-[fetch]
-	# Automatically prune deleted remote branches
-	prune = true
-	# Prune tags as well
-	pruneTags = true
 
-# =============================================================================
-# Push Settings
-# =============================================================================
 [push]
 	# Push current branch to upstream
-	default = current
-	# Automatically push tags with commits
+	default = simple
+	# Push tags along with commits
 	followTags = true
-	# Use force-with-lease instead of force
+	# Refuse to push if upstream branch name differs
 	autoSetupRemote = true
 
-# =============================================================================
-# Diff Settings
-# =============================================================================
+[fetch]
+	# Remove deleted remote branches
+	prune = true
+	# Prune tags that no longer exist on remote
+	pruneTags = true
+
 [diff]
-	# Use vimdiff as default diff tool
 	tool = vimdiff
-	
-	# Detect renames
+	# Detect renames and copies
 	renames = copies
-	
-	# Show submodule changes
-	submodule = log
-	
-	# Better diff algorithm
+	# Use better diff algorithm
 	algorithm = histogram
-	
-	# Highlight moved code
+	# Color moved lines differently
 	colorMoved = default
 
-[difftool]
-	prompt = false
-
-# =============================================================================
-# Merge Settings
-# =============================================================================
 [merge]
-	# Use vimdiff as merge tool
 	tool = vimdiff
-	
 	# Show common ancestor in merge conflicts
 	conflictStyle = diff3
-	
-	# Include summaries in merge commits
-	log = true
+	# Disable fast-forward for merge commits
+	ff = false
 
-[mergetool]
-	prompt = false
-	keepBackup = false
-
-# =============================================================================
-# Rebase Settings
-# =============================================================================
 [rebase]
-	# Automatically stash and unstash
+	# Automatically stash before rebase
 	autoStash = true
-	# Automatically squash fixup commits
+	# Squash fixup commits automatically
 	autoSquash = true
 
-# =============================================================================
-# Color Settings
-# =============================================================================
+[status]
+	# Show submodule summary
+	submoduleSummary = true
+	# Show branch and tracking info
+	branch = true
+
 [color]
 	ui = auto
 	branch = auto
 	diff = auto
 	status = auto
-	interactive = auto
-
-[color "branch"]
-	current = yellow reverse
-	local = yellow
-	remote = green
 
 [color "diff"]
 	meta = yellow bold
@@ -142,143 +80,58 @@
 	old = red bold
 	new = green bold
 
-[color "status"]
-	added = green
-	changed = yellow
-	untracked = red
-
-# =============================================================================
-# Aliases
-# =============================================================================
 [alias]
-	# Short status
+	# Quick shortcuts
 	st = status -sb
-	s = status -sb
-	
-	# Better log formats
-	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
-	lol = log --graph --decorate --pretty=oneline --abbrev-commit
-	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
-	
-	# Show what I've done today/this week
-	today = log --since=midnight --author='Mark B. Sigler' --oneline
-	week = log --since='1 week ago' --author='Mark B. Sigler' --oneline
-	
-	# Commit shortcuts
-	ci = commit
-	cm = commit -m
-	ca = commit -a
-	cam = commit -am
-	amend = commit --amend
-	fixup = commit --fixup
-	
-	# Branch management
-	br = branch
 	co = checkout
-	cob = checkout -b
-	sw = switch
-	swc = switch -c
+	br = branch
+	ci = commit
 	
-	# Show branches sorted by last modified
-	branches = branch -a --sort=-committerdate
-	br-recent = for-each-ref --sort=-committerdate refs/heads/ --format='%(color:cyan)%(committerdate:short) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject)'
+	# Better log visualization
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	ll = log --pretty=format:'%C(yellow)%h%Cred%d %Creset%s%Cblue [%cn]' --decorate --numstat
 	
-	# Remote shortcuts
-	f = fetch
-	fa = fetch --all
-	pl = pull
-	ps = push
-	psu = push -u origin HEAD
-	
-	# Diff shortcuts
-	d = diff
-	dc = diff --cached
-	ds = diff --stat
-	
-	# Show modified files in last commit
-	dl = "!git ll -1"
+	# Show what I've done today
+	today = log --since=midnight --author='Mark B. Sigler' --oneline
+	yesterday = log --since=yesterday.midnight --until=midnight --author='Mark B. Sigler' --oneline
 	
 	# Undo last commit (keep changes)
 	undo = reset HEAD~1 --mixed
 	
-	# Unstage files
-	unstage = reset HEAD --
+	# Amend last commit without editing message
+	amend = commit --amend --no-edit
 	
-	# Show tracked files
-	ls = ls-files
-	
-	# Show ignored files
-	ignored = ls-files -o -i --exclude-standard
-	
-	# Stash shortcuts
-	sa = stash apply
-	sl = stash list
-	sp = stash pop
-	ss = stash save
+	# Show branches sorted by last modified
+	branches = branch -v --sort=-committerdate
 	
 	# Show contributors
-	contributors = shortlog --summary --numbered
+	contributors = shortlog --summary --numbered --email
 	
-	# Find commits by message
-	find = "!git log --all --grep="
-	
-	# Find commits by code content
-	fc = "!git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S"
-	
-	# List aliases
-	aliases = config --get-regexp ^alias\\.
-	
-	# Show current branch
-	current = branch --show-current
-	
-	# Delete merged branches
+	# Clean up merged branches
 	cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d"
 	
-	# Show remote url
-	url = remote get-url origin
+	# Show aliases
+	aliases = config --get-regexp alias
 
-# =============================================================================
-# HTTP Settings
-# =============================================================================
 [http]
 	# Increase buffer for large repos
 	postBuffer = 1073741824
 
-# =============================================================================
-# Credential Management (Cross-platform)
-# =============================================================================
-[credential]
-	# Platform-specific credential helpers will be set in includeIf sections
-
 [credential "https://dev.azure.com"]
 	useHttpPath = true
 
-# =============================================================================
 # Git LFS (Large File Storage)
-# =============================================================================
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
 
-# =============================================================================
-# Performance
-# =============================================================================
-[feature]
-	manyFiles = true
-
-[index]
-	version = 4
-
-# =============================================================================
-# Platform-specific includes
-# =============================================================================
-# These files contain platform-specific settings (credential helpers, etc.)
-
+# Platform-specific includes (only loaded if paths exist)
 [includeIf "gitdir:/Users/"]
 	path = ~/.config/git/gitconfig-macos
 
 [includeIf "gitdir:/home/"]
 	path = ~/.config/git/gitconfig-linux
+
+# Credential helpers are configured in platform-specific files above
