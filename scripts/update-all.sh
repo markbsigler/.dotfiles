@@ -140,7 +140,11 @@ update_system() {
         macos)
             if command_exists brew; then
                 info "Updating Homebrew..."
-                [[ "$DRY_RUN" == false ]] && brew update || info "DRY RUN: Would run 'brew update'"
+                if [[ "$DRY_RUN" == false ]]; then
+                    brew update
+                else
+                    info "DRY RUN: Would run 'brew update'"
+                fi
                 
                 info "Upgrading Homebrew packages..."
                 if [[ "$DRY_RUN" == false ]]; then
@@ -152,7 +156,11 @@ update_system() {
                 fi
                 
                 info "Cleaning up Homebrew..."
-                [[ "$DRY_RUN" == false ]] && brew cleanup || info "DRY RUN: Would run 'brew cleanup'"
+                if [[ "$DRY_RUN" == false ]]; then
+                    brew cleanup
+                else
+                    info "DRY RUN: Would run 'brew cleanup'"
+                fi
                 
                 success "Homebrew update complete"
             else
@@ -169,13 +177,25 @@ update_system() {
                     ubuntu|debian)
                         if command_exists apt; then
                             info "Updating APT..."
-                            [[ "$DRY_RUN" == false ]] && sudo apt update || info "DRY RUN: Would run 'sudo apt update'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo apt update
+                            else
+                                info "DRY RUN: Would run 'sudo apt update'"
+                            fi
                             
                             info "Upgrading APT packages..."
-                            [[ "$DRY_RUN" == false ]] && sudo apt upgrade -y || info "DRY RUN: Would run 'sudo apt upgrade -y'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo apt upgrade -y
+                            else
+                                info "DRY RUN: Would run 'sudo apt upgrade -y'"
+                            fi
                             
                             info "Cleaning up APT..."
-                            [[ "$DRY_RUN" == false ]] && sudo apt autoremove -y || info "DRY RUN: Would run 'sudo apt autoremove -y'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo apt autoremove -y
+                            else
+                                info "DRY RUN: Would run 'sudo apt autoremove -y'"
+                            fi
                             
                             success "APT update complete"
                         fi
@@ -183,18 +203,30 @@ update_system() {
                     fedora|rhel|centos)
                         if command_exists dnf; then
                             info "Updating DNF..."
-                            [[ "$DRY_RUN" == false ]] && sudo dnf upgrade -y || info "DRY RUN: Would run 'sudo dnf upgrade -y'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo dnf upgrade -y
+                            else
+                                info "DRY RUN: Would run 'sudo dnf upgrade -y'"
+                            fi
                             success "DNF update complete"
                         elif command_exists yum; then
                             info "Updating YUM..."
-                            [[ "$DRY_RUN" == false ]] && sudo yum update -y || info "DRY RUN: Would run 'sudo yum update -y'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo yum update -y
+                            else
+                                info "DRY RUN: Would run 'sudo yum update -y'"
+                            fi
                             success "YUM update complete"
                         fi
                         ;;
                     arch|manjaro)
                         if command_exists pacman; then
                             info "Updating Pacman..."
-                            [[ "$DRY_RUN" == false ]] && sudo pacman -Syu --noconfirm || info "DRY RUN: Would run 'sudo pacman -Syu'"
+                            if [[ "$DRY_RUN" == false ]]; then
+                                sudo pacman -Syu --noconfirm
+                            else
+                                info "DRY RUN: Would run 'sudo pacman -Syu'"
+                            fi
                             success "Pacman update complete"
                         fi
                         ;;
@@ -303,7 +335,11 @@ update_version_managers() {
     if [[ -d "$HOME/.nvm" ]]; then
         info "Updating NVM..."
         if [[ "$DRY_RUN" == false ]]; then
-            (cd "$HOME/.nvm" && git pull --quiet) && success "NVM updated" || warning "NVM update failed"
+            if (cd "$HOME/.nvm" && git pull --quiet); then
+                success "NVM updated"
+            else
+                warning "NVM update failed"
+            fi
         else
             info "DRY RUN: Would update NVM"
         fi
@@ -313,7 +349,11 @@ update_version_managers() {
     if [[ -d "$HOME/.pyenv" ]]; then
         info "Updating pyenv..."
         if [[ "$DRY_RUN" == false ]]; then
-            (cd "$HOME/.pyenv" && git pull --quiet) && success "pyenv updated" || warning "pyenv update failed"
+            if (cd "$HOME/.pyenv" && git pull --quiet); then
+                success "pyenv updated"
+            else
+                warning "pyenv update failed"
+            fi
         else
             info "DRY RUN: Would update pyenv"
         fi
@@ -323,9 +363,17 @@ update_version_managers() {
     if [[ -d "$HOME/.rbenv" ]]; then
         info "Updating rbenv..."
         if [[ "$DRY_RUN" == false ]]; then
-            (cd "$HOME/.rbenv" && git pull --quiet) && success "rbenv updated" || warning "rbenv update failed"
+            if (cd "$HOME/.rbenv" && git pull --quiet); then
+                success "rbenv updated"
+            else
+                warning "rbenv update failed"
+            fi
             if [[ -d "$HOME/.rbenv/plugins/ruby-build" ]]; then
-                (cd "$HOME/.rbenv/plugins/ruby-build" && git pull --quiet) && success "ruby-build updated" || warning "ruby-build update failed"
+                if (cd "$HOME/.rbenv/plugins/ruby-build" && git pull --quiet); then
+                    success "ruby-build updated"
+                else
+                    warning "ruby-build update failed"
+                fi
             fi
         else
             info "DRY RUN: Would update rbenv"
@@ -335,7 +383,13 @@ update_version_managers() {
     # Update rustup
     if command_exists rustup; then
         info "Updating Rust toolchain..."
-        [[ "$DRY_RUN" == false ]] && rustup update && success "Rust updated" || info "DRY RUN: Would run 'rustup update'"
+        if [[ "$DRY_RUN" == false ]]; then
+            if rustup update; then
+                success "Rust updated"
+            fi
+        else
+            info "DRY RUN: Would run 'rustup update'"
+        fi
     fi
     echo
 }
@@ -350,7 +404,11 @@ update_dotfiles() {
         if git -C "$DOTFILES_DIR" remote | grep -q origin; then
             if [[ "$DRY_RUN" == false ]]; then
                 info "Pulling latest changes..."
-                git -C "$DOTFILES_DIR" pull && success "Dotfiles updated" || warning "Dotfiles update failed"
+                if git -C "$DOTFILES_DIR" pull; then
+                    success "Dotfiles updated"
+                else
+                    warning "Dotfiles update failed"
+                fi
             else
                 info "DRY RUN: Would run 'git pull' in $DOTFILES_DIR"
             fi

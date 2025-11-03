@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 echo "Testing os-detection..."
+# shellcheck source=/dev/null
 source config/zsh/os-detection.zsh
 
 echo "DOTFILES_OS: $DOTFILES_OS"

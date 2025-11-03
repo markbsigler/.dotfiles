@@ -46,6 +46,7 @@ test_os_detection() {
     test_start "OS Detection"
     
     if [[ -f "config/zsh/os-detection.zsh" ]]; then
+        # shellcheck source=/dev/null
         source config/zsh/os-detection.zsh
         
         # Test OS detection functions exist
@@ -226,6 +227,7 @@ test_symlinks() {
 test_platform_specific() {
     test_start "Platform-Specific Features"
     
+    # shellcheck source=/dev/null
     source config/zsh/os-detection.zsh
     
     # Load brew environment if available

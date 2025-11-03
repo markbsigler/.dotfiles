@@ -105,7 +105,11 @@ main() {
                 info "Backing up: $file"
             fi
             # Use -L to follow symlinks and backup the actual file
-            cp -L "$file" "$BACKUP_DIR/" 2>/dev/null && ((backed_up++)) || ((skipped++))
+            if cp -L "$file" "$BACKUP_DIR/" 2>/dev/null; then
+                ((backed_up++))
+            else
+                ((skipped++))
+            fi
         else
             if [[ "$VERBOSE" == true ]]; then
                 warning "Skipping (not found): $file"
@@ -129,7 +133,11 @@ main() {
             fi
             mkdir -p "$BACKUP_DIR/config"
             # Use -L to follow symlinks
-            cp -rL "$dir" "$BACKUP_DIR/config/" 2>/dev/null && ((backed_up++)) || ((skipped++))
+            if cp -rL "$dir" "$BACKUP_DIR/config/" 2>/dev/null; then
+                ((backed_up++))
+            else
+                ((skipped++))
+            fi
         else
             if [[ "$VERBOSE" == true ]]; then
                 warning "Skipping (not found): $dir"

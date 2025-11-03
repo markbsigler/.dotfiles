@@ -29,6 +29,7 @@ fi
 
 # Test OS detection functions
 echo "Testing OS detection..."
+# shellcheck source=/dev/null
 source ./config/zsh/os-detection.zsh
 if is_macos; then
     echo "✓ macOS detected correctly"
@@ -38,6 +39,7 @@ fi
 
 # Test prompt functions with guards
 echo "Testing prompt functions..."
+# shellcheck source=/dev/null
 source ./config/zsh/prompt.zsh
 if os_prompt_info; then
     echo "✓ os_prompt_info works"

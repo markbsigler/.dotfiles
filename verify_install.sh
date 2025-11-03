@@ -16,16 +16,17 @@ for file in .gitconfig .vimrc .zshrc; do
 done
 
 # Check if backup was created
-latest_backup=$(ls -1dt "$HOME"/.dotfiles-backup-* 2>/dev/null | head -1)
+latest_backup=$(find "$HOME" -maxdepth 1 -name ".dotfiles-backup-*" -type d 2>/dev/null | sort -r | head -1)
 if [[ -n "$latest_backup" ]]; then
     echo "✅ Backup created: $(basename "$latest_backup")"
-    echo "   Contains: $(ls "$latest_backup" 2>/dev/null | wc -l) files"
+    echo "   Contains: $(find "$latest_backup" -type f 2>/dev/null | wc -l | tr -d ' ') files"
 else
     echo "❌ No backup directory found"
 fi
 
 # Test OS detection
 echo "Testing OS detection functions:"
+# shellcheck source=/dev/null
 if source ./config/zsh/os-detection.zsh 2>/dev/null; then
     if is_macos; then
         echo "✅ macOS detection works"
@@ -38,6 +39,7 @@ fi
 
 # Test prompt functions
 echo "Testing prompt functions:"
+# shellcheck source=/dev/null
 if source ./config/zsh/prompt.zsh 2>/dev/null; then
     if [[ -n "$(battery_prompt_info)" ]]; then
         echo "✅ battery_prompt_info returns data"

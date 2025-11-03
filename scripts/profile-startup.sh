@@ -114,7 +114,7 @@ fi
 
 # Detect time command type (GNU vs BSD)
 detect_time_cmd() {
-    if time --version &> /dev/null; then
+    if command time --version >/dev/null 2>&1; then
         echo "gnu"
     else
         echo "bsd"
