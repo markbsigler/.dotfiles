@@ -15,44 +15,22 @@ else
     export VISUAL="nano"
 fi
 
-# Platform-specific PATH modifications
-if is_macos; then
-    # Homebrew paths (Apple Silicon vs Intel)
-    if is_arm64; then
-        export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
-    else
-        export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-    fi
-    
-    # macOS specific paths
-    export PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
-    export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
-    export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
-    
-elif is_linux; then
-    # Linux-specific paths
-    export PATH="/usr/local/bin:$PATH"
+# Note: Core PATH setup is in .zprofile (loaded for login shells)
+# Additional platform-specific paths for interactive shells
+
+if is_linux; then
+    # Linux-specific package system paths
     
     # Snap packages (Ubuntu/Pop!_OS/etc.)
     [[ -d "/snap/bin" ]] && export PATH="/snap/bin:$PATH"
     
-    # Flatpak
+    # Flatpak applications
     [[ -d "/var/lib/flatpak/exports/bin" ]] && export PATH="/var/lib/flatpak/exports/bin:$PATH"
     [[ -d "$HOME/.local/share/flatpak/exports/bin" ]] && export PATH="$HOME/.local/share/flatpak/exports/bin:$PATH"
     
-    # AppImage directory (common location)
+    # AppImage directory (common location for portable Linux apps)
     [[ -d "$HOME/Applications" ]] && export PATH="$HOME/Applications:$PATH"
-    
-elif is_windows; then
-    # Windows/WSL specific paths
-    # Add Windows paths if needed
-    :
 fi
-
-# Common paths (all platforms)
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.npm-global/bin:$PATH"
-export PATH="$HOME/bin:$PATH"
 
 # Clean up PATH (remove duplicates while preserving order)
 clean_path() {
@@ -134,13 +112,12 @@ elif command -v batcat &> /dev/null; then
     [[ ! -f "$HOME/.local/bin/bat" ]] && mkdir -p "$HOME/.local/bin" && ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"
 fi
 
-# Rust/Cargo
-[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+# Ollama configuration (local LLM server)
+export OLLAMA_API_BASE="http://localhost:11434"
 
-# Go
+# Go configuration (GOPATH set, PATH managed in .zprofile)
 if command -v go &> /dev/null; then
     export GOPATH="$HOME/go"
-    export PATH="$GOPATH/bin:$PATH"
 fi
 
 # Python

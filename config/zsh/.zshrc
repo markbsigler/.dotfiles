@@ -48,25 +48,8 @@ for config in "$ZDOTDIR"/{os-detection,exports,package-manager,aliases,functions
     [[ -r "$config" ]] && source "$config"
 done
 
-# Package manager environment setup (after os-detection is loaded)
-if command -v is_macos >/dev/null && is_macos 2>/dev/null; then
-    # macOS - Homebrew is the standard package manager
-    if [[ -x "/opt/homebrew/bin/brew" ]]; then
-        # Apple Silicon macOS
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -x "/usr/local/bin/brew" ]]; then
-        # Intel macOS
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
-elif command -v is_linux >/dev/null && is_linux 2>/dev/null; then
-    # Linux - Native package managers don't need shellenv setup
-    # Only set up Homebrew if explicitly installed by user
-    if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
-        eval "$($HOME/.linuxbrew/bin/brew shellenv)"
-    fi
-fi
+# Package manager setup is handled in .zprofile for login shells
+# This ensures PATH is set correctly before any other initialization
 
 # Initialize completions (after all config loaded)
 autoload -Uz compinit
