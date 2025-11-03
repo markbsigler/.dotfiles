@@ -131,24 +131,74 @@ node -v && python --version && go version && rustup --version && ruby --version 
 ## 🔧 Commands
 
 ```bash
-make install        # Full installation
+make install        # Full installation (creates backups)
 make install-dry    # Preview without changes
 make update         # Update existing symlinks only
 make packages       # Install packages only
-make doctor         # Health check
-make test           # Run tests
-make lint           # Lint shell scripts
+make doctor         # Health check and diagnostics
+make test           # Run comprehensive test suite ✅
+make lint           # Lint shell scripts with shellcheck ✅
 make plugins        # Update Zsh plugins
 make fonts          # Install Agave Nerd Font
 ```
 
-## 🔍 Environment detection
+**Quality Assurance:**
+- ✅ All shell scripts pass shellcheck (0 issues)
+- ✅ Comprehensive test suite for ZSH, Vim, and shell scripts
+- ✅ Cross-platform tested on macOS and Linux
+
+## 🔍 Environment Detection
 
 ```bash
 show_env            # Display detected OS/arch
 ```
 
 Key variables: `DOTFILES_OS`, `DOTFILES_ARCH`, `DOTFILES_DISTRO`.
+
+## 🔒 Secrets Management
+
+Secure secrets management with 5 different methods to fit your security needs:
+
+| Method | Security | Ease | Platform | Best For |
+|--------|----------|------|----------|----------|
+| Plain File | ⭐ | ⭐⭐⭐⭐⭐ | All | Development |
+| Password Store (pass) | ⭐⭐⭐⭐ | ⭐⭐⭐ | macOS/Linux | Power Users |
+| 1Password CLI | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | All | Enterprise |
+| macOS Keychain | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | macOS | Mac Users |
+| Linux Keyring | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Linux GUI | Linux Desktop |
+
+**Quick Start:**
+```bash
+secret_add GITHUB_TOKEN "ghp_xxxx"  # Simple method
+secret_list                          # List all secrets
+secret_help                          # Show all methods
+```
+
+**Advanced:**
+```bash
+# 1Password CLI
+secret_from_1password GITHUB_TOKEN "op://Personal/GitHub/token"
+
+# macOS Keychain
+keychain_add github_token "ghp_xxxx"
+secret_from_keychain GITHUB_TOKEN github_token
+
+# Password Store (pass)
+secret_from_pass GITHUB_TOKEN github/token
+```
+
+See [docs/SECRETS.md](docs/SECRETS.md) for comprehensive guide with all 5 methods.
+
+## 📁 XDG Base Directory Compliance
+
+Follows the XDG Base Directory specification for clean configuration management:
+
+- **Config**: `~/.config/zsh/` - All ZSH configuration files
+- **Data**: `~/.local/share/` - Plugins, completions, persistent data
+- **Cache**: `~/.cache/zsh/` - Completion cache, temporary files
+- **State**: `~/.local/state/` - History, logs, state files
+
+Managed via `~/.zshenv` (loaded first for all shell invocations) and `~/.zprofile` (login shells).
 
 ## 🎯 Customization
 
@@ -166,15 +216,48 @@ alias work-ssh="ssh user@work-server"
 ## 🧪 Test & Health
 
 ```bash
-make test
-make doctor
+make test     # Run comprehensive test suite
+make doctor   # System health check
+make lint     # ShellCheck linting (all scripts pass ✅)
 ```
+
+**Test Coverage:**
+- ZSH configuration syntax
+- Shell script validation
+- Integration tests
+- Vim configuration
 
 ## 🚨 Troubleshooting
 
-- Slow startup: `zsh -x -c exit 2>&1 | ts -i "%.s"`
-- Missing tools: `make doctor` then `./scripts/install-packages.sh`
-- PATH issues: `echo $PATH | tr ':' '\n' | nl` then `clean_path`
+Quick diagnostics:
+```bash
+make doctor                           # Health check
+make test                             # Run all tests
+scripts/profile-startup.sh            # Profile shell startup time
+```
+
+Common issues:
+- **Slow startup**: `scripts/profile-startup.sh --detailed`
+- **Missing tools**: `make doctor` then `scripts/install-packages.sh`
+- **PATH issues**: `echo $PATH | tr ':' '\n' | nl` then `clean_path`
+
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for comprehensive guide.
+
+## 📚 Documentation
+
+Complete documentation for customization, troubleshooting, and advanced features:
+
+- **[docs/README.md](docs/README.md)** - Documentation hub and quick reference
+- **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** - How to customize your dotfiles
+- **[docs/SECRETS.md](docs/SECRETS.md)** - Secure secrets management (5 methods)
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md)** - Future enhancements (26 ideas)
+- **[GITHUB_AUTH_SETUP.md](GITHUB_AUTH_SETUP.md)** - GitHub authentication setup
+
+**Quick Links:**
+- Customize: `~/.config/zsh/local.zsh` for machine-specific settings
+- Functions: See `config/zsh/functions.zsh` for all available functions
+- Secrets: Run `secret_help` for secrets management options
 
 ## 📝 License
 

@@ -1,6 +1,8 @@
-# Enhanced Zsh & Vim Configuration 🌊
+# Enhanced Zsh Configuration 🌊
 
-A comprehensive, modular shell and editor configuration designed for modern development workflows.
+> **Note:** This is the Zsh-specific configuration documentation. For the main repository documentation, installation instructions, and getting started guide, see the [main README](../../README.md) and [docs directory](../../docs/README.md).
+
+A comprehensive, modular shell configuration designed for modern development workflows. This document focuses on the Zsh configuration features, functions, and customization options.
 
 ## Features Overview
 
@@ -48,19 +50,20 @@ A comprehensive, modular shell and editor configuration designed for modern deve
 
 ## Quick Start
 
-### 1. Run the Setup Script
+> **For initial installation**, use `make install` from the dotfiles repository root. See the [main README](../../README.md#-quick-start) for installation instructions.
+
+### Reload Configuration
+
+After making changes to Zsh configuration files:
+
 ```bash
-bash ~/.config/zsh/setup-tools.sh
+source ~/.zshrc    # Reload configuration
 ```
 
-### 2. Restart Your Terminal
-```bash
-source ~/.zshrc
-```
+### Optional: Setup Additional Tools
 
-### 3. Install Vim Plugins
 ```bash
-vim +PlugInstall +qall
+bash ~/.config/zsh/setup-tools.sh    # Install modern CLI tools
 ```
 
 ## Key Features & Commands
@@ -271,6 +274,14 @@ hist_stats
 2. Run `:PlugInstall` to install missing plugins
 3. Check `:checkhealth` in Neovim for diagnostics
 
+## Related Documentation
+
+- **[Main README](../../README.md)** - Repository overview and installation
+- **[Documentation Hub](../../docs/README.md)** - All documentation and quick reference
+- **[CUSTOMIZATION.md](../../docs/CUSTOMIZATION.md)** - How to customize your dotfiles
+- **[SECRETS.md](../../docs/SECRETS.md)** - Secrets management guide
+- **[TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
 ## Contributing
 
 This configuration is designed to be:
@@ -279,10 +290,10 @@ This configuration is designed to be:
 - **Performant** - Optimized for speed and efficiency
 - **Cross-platform** - Works on macOS and Linux
 
-## License
-
-Feel free to use, modify, and share this configuration. No warranty provided - use at your own risk!
+See the [main repository](../../README.md#-contributing) for contribution guidelines.
 
 ---
 
-**Enjoy your enhanced development environment!** 🚀
+**Last Updated:** November 2025
+
+For the latest changes, see [IMPROVEMENTS_ROADMAP.md](../../IMPROVEMENTS_ROADMAP.md)
