@@ -1,0 +1,56 @@
+# Pre-commit hooks for dotfiles repository
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-executables-have-shebangs
+        name: Check executables have shebangs
+      - id: check-shebang-scripts-are-executable
+        name: Check shebangs are executable
+      - id: detect-private-key
+        name: Detect private keys
+
+  # ShellCheck for shell scripts
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: ShellCheck
+        args: [--severity=warning]
+        types: [shell]
+
+  # Local hooks
+  - repo: local
+    hooks:
+      - id: test-dotfiles
+        name: Test dotfiles
+        entry: bash -c 'cd ~/.dotfiles && make test'
+        language: system
+        pass_filenames: false
+        files: '\.(sh|zsh|bash)$'
+        stages: [commit]
+      
+      - id: lint-scripts
+        name: Lint shell scripts
+        entry: bash -c 'cd ~/.dotfiles && make lint'
+        language: system
+        pass_filenames: false
+        files: '\.(sh|zsh|bash)$'
+        stages: [commit]
+
