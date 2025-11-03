@@ -1,15 +1,91 @@
 # ~/.config/zsh/completions.zsh - Enhanced completion settings
+# =============================================================================
+# Cross-platform zsh completion configuration
+# Supports: macOS (Intel & Apple Silicon), Linux (various distros)
+# =============================================================================
 
-# Add Homebrew completions to fpath (before compinit)
-if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
-    fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+# =============================================================================
+# Completion Path Setup (Platform-specific)
+# =============================================================================
+# Add completion directories to fpath before initializing completion system
+
+case "$(uname -s)" in
+    Darwin*)
+        # macOS - Homebrew completions
+        if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
+            # Apple Silicon
+            fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+        fi
+        if [[ -d "/usr/local/share/zsh/site-functions" ]]; then
+            # Intel Mac
+            fpath=("/usr/local/share/zsh/site-functions" $fpath)
+        fi
+        ;;
+    Linux*)
+        # Linux - various package manager completion directories
+        
+        # Homebrew on Linux (if installed)
+        if [[ -d "/home/linuxbrew/.linuxbrew/share/zsh/site-functions" ]]; then
+            fpath=("/home/linuxbrew/.linuxbrew/share/zsh/site-functions" $fpath)
+        fi
+        
+        # System-wide zsh completions (common on Debian/Ubuntu)
+        if [[ -d "/usr/share/zsh/site-functions" ]]; then
+            fpath=("/usr/share/zsh/site-functions" $fpath)
+        fi
+        
+        # Fedora/RHEL/CentOS
+        if [[ -d "/usr/share/zsh/$ZSH_VERSION/functions" ]]; then
+            fpath=("/usr/share/zsh/$ZSH_VERSION/functions" $fpath)
+        fi
+        ;;
+esac
+
+# User-local completions (custom completions)
+if [[ -d "$ZDOTDIR/completions" ]]; then
+    fpath=("$ZDOTDIR/completions" $fpath)
+fi
+if [[ -d "$HOME/.zsh/completions" ]]; then
+    fpath=("$HOME/.zsh/completions" $fpath)
 fi
 
-# Modern completion system
-# Skip insecure directory warnings on Linux
+# =============================================================================
+# Completion System Initialization
+# =============================================================================
+
+# Skip insecure directory warnings (useful when using mixed permissions)
 export ZSH_DISABLE_COMPFIX=true
+
+# Load completion system
 autoload -Uz compinit
-compinit -u
+
+# Smart completion cache (only rebuild once per day)
+# This significantly improves startup time
+typeset -i updated_at
+
+case "$(uname -s)" in
+    Darwin*)
+        # macOS stat
+        updated_at=$(stat -f '%Sm' -t '%j' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null || echo 0)
+        ;;
+    Linux*)
+        # GNU stat (Linux)
+        if stat --version &>/dev/null 2>&1; then
+            # GNU stat
+            updated_at=$(stat -c '%Y' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0)
+        else
+            # BSD stat (some Linux distros)
+            updated_at=$(stat -f '%Sm' -t '%j' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null || echo 0)
+        fi
+        ;;
+esac
+
+# Only rebuild completion cache if older than a day
+if [[ ${updated_at} -lt $(date +'%j') ]]; then
+    compinit -i -d "$XDG_CACHE_HOME/zsh/zcompdump"
+else
+    compinit -C -i -d "$XDG_CACHE_HOME/zsh/zcompdump"
+fi
 
 # Set up completion menu navigation
 zstyle ':completion:*' menu select
@@ -83,27 +159,98 @@ zstyle ':completion:*:(ssh|scp|rsync):*:hosts-host' ignored-patterns '*(.|:)*' l
 zstyle ':completion:*:(ssh|scp|rsync):*:hosts-domain' ignored-patterns '<->.<->.<->.<->' '^[-[:alnum:]]##(.[-[:alnum:]]##)##' '*@*'
 zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<->.<->.<->|(|::)([[:xdigit:].]##:(#c,2))##(|%*))' '127.0.0.<->' '255.255.255.255' '::1' 'fe80::*'
 
-# Modern CLI tools completion
+# =============================================================================
+# Tool-specific Completions (Cross-platform)
+# =============================================================================
+# Load completions for modern development tools if they're installed
+
+# Kubernetes (kubectl)
 if command -v kubectl &> /dev/null; then
     source <(kubectl completion zsh)
     alias k=kubectl
     compdef kubectl k
 fi
 
+# GitHub CLI
 if command -v gh &> /dev/null; then
     eval "$(gh completion -s zsh)"
 fi
 
+# Helm (Kubernetes package manager)
 if command -v helm &> /dev/null; then
     source <(helm completion zsh)
 fi
 
-# Python/pip completion
-if command -v pip &> /dev/null; then
-    eval "$(pip completion --zsh)"
+# Terraform
+if command -v terraform &> /dev/null; then
+    complete -o nospace -C terraform terraform
 fi
 
-# AWS CLI completion
-if command -v aws &> /dev/null && [[ -f /opt/homebrew/bin/aws_completer ]]; then
-    compdef _aws_completer aws
+# Python/pip completion
+if command -v pip &> /dev/null; then
+    eval "$(pip completion --zsh)" 2>/dev/null
 fi
+if command -v pip3 &> /dev/null; then
+    eval "$(pip3 completion --zsh)" 2>/dev/null
+fi
+
+# Poetry (Python dependency management)
+if command -v poetry &> /dev/null; then
+    poetry completions zsh > "$ZDOTDIR/completions/_poetry" 2>/dev/null
+fi
+
+# Cargo (Rust package manager)
+if command -v rustup &> /dev/null; then
+    rustup completions zsh > "$ZDOTDIR/completions/_rustup" 2>/dev/null
+    rustup completions zsh cargo > "$ZDOTDIR/completions/_cargo" 2>/dev/null
+fi
+
+# AWS CLI completion (cross-platform paths)
+if command -v aws &> /dev/null; then
+    # Try various possible locations for aws_completer
+    for completer_path in \
+        "/opt/homebrew/bin/aws_completer" \
+        "/usr/local/bin/aws_completer" \
+        "/usr/bin/aws_completer" \
+        "$(dirname $(which aws))/aws_completer"; do
+        if [[ -f "$completer_path" ]]; then
+            complete -C "$completer_path" aws
+            break
+        fi
+    done
+fi
+
+# Docker Compose (both v1 and v2)
+if command -v docker-compose &> /dev/null; then
+    compdef _docker-compose docker-compose
+fi
+if command -v docker &> /dev/null; then
+    # Docker compose v2 (docker compose)
+    compdef _docker docker
+fi
+
+# Vagrant
+if command -v vagrant &> /dev/null; then
+    compdef _vagrant vagrant
+fi
+
+# Make
+if command -v make &> /dev/null; then
+    compdef _make make
+fi
+
+# npm/yarn/pnpm
+if command -v npm &> /dev/null; then
+    compdef _npm npm
+fi
+if command -v yarn &> /dev/null; then
+    compdef _yarn yarn
+fi
+if command -v pnpm &> /dev/null; then
+    # pnpm completion
+    [[ -f "$HOME/.config/tabtab/zsh/__tabtab.zsh" ]] && source "$HOME/.config/tabtab/zsh/__tabtab.zsh"
+fi
+
+# Git (enhanced)
+compdef _git git
+compdef _git g  # if you use 'g' as git alias
