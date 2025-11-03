@@ -4,7 +4,7 @@
 
 Your dotfiles are **already excellent** with enterprise-grade features. This roadmap outlines remaining enhancements organized by priority.
 
-**Completed:** 11 major improvements | **Remaining:** 15 enhancements
+**Completed:** 11 major improvements | **Remaining:** 4 quick wins + 11 nice-to-have enhancements
 
 **Current Score: 9.0/10** - Production-ready with enhanced security and workflow tools.
 
@@ -210,7 +210,9 @@ docs/
 
 ---
 
-## 🏆 Top 10 Quick Wins (Implement These Next)
+## 🏆 Top 5 Remaining Quick Wins
+
+**Note:** Items #2, #3, #6, #7, #8 from the original Top 10 have been completed and are documented in the "Recently Completed" section above.
 
 ### 1. Add GitHub Actions CI/CD
 **Effort:** Low | **Impact:** High | **Time:** 30 min
@@ -253,126 +255,7 @@ jobs:
 
 ---
 
-### 2. ✅ Add Pre-commit Hooks - COMPLETED
-**Effort:** Low | **Impact:** Medium | **Time:** 20 min | **Status:** ✅ Implemented (see section 6 above)
-
-```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-      - id: check-merge-conflict
-  
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
-    hooks:
-      - id: shellcheck
-        args: [--severity=warning]
-  
-  - repo: local
-    hooks:
-      - id: test-dotfiles
-        name: Test dotfiles
-        entry: ./scripts/test-dotfiles.sh --quick
-        language: system
-        pass_filenames: false
-```
-
-```bash
-# Install
-pip install pre-commit
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
----
-
-### 3. ✅ Add tmux Configuration - COMPLETED
-**Effort:** Medium | **Impact:** High | **Time:** 45 min | **Status:** ✅ Implemented (see section 7 above)
-
-```bash
-# config/tmux/tmux.conf
-# Modern tmux configuration with sensible defaults
-
-# Set prefix to Ctrl-Space
-unbind C-b
-set -g prefix C-Space
-bind C-Space send-prefix
-
-# Use 256 colors
-set -g default-terminal "screen-256color"
-
-# Start windows and panes at 1
-set -g base-index 1
-setw -g pane-base-index 1
-
-# Mouse support
-set -g mouse on
-
-# Vi mode
-setw -g mode-keys vi
-
-# Split panes using | and -
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-
-# Reload config
-bind r source-file ~/.tmux.conf \; display "Config reloaded!"
-
-# Status bar
-set -g status-style 'bg=#333333 fg=#5eacd3'
-set -g status-left-length 40
-set -g status-right '#[fg=yellow]#(whoami)@#h #[fg=white]%H:%M'
-
-# Pane border
-set -g pane-border-style 'fg=#444444'
-set -g pane-active-border-style 'fg=#5eacd3'
-
-# Plugins (optional - using TPM)
-# set -g @plugin 'tmux-plugins/tpm'
-# set -g @plugin 'tmux-plugins/tmux-sensible'
-# set -g @plugin 'tmux-plugins/tmux-yank'
-```
-
----
-
-### 4. Add Restore Script
-**Effort:** Low | **Impact:** Medium | **Time:** 30 min
-
-```bash
-# scripts/restore-dotfiles.sh
-#!/usr/bin/env bash
-# Restore dotfiles from backup
-
-BACKUP_DIR="${1:-$(ls -dt ~/.dotfiles-backup-* | head -1)}"
-
-if [[ ! -d "$BACKUP_DIR" ]]; then
-    echo "❌ No backup found"
-    exit 1
-fi
-
-echo "📦 Restoring from: $BACKUP_DIR"
-
-# Remove current symlinks
-rm -f ~/.zshrc ~/.zshenv ~/.zprofile ~/.gitconfig
-
-# Restore files
-cp -r "$BACKUP_DIR"/* ~/
-
-echo "✅ Restored successfully"
-echo "⚠️  Restart your shell: exec zsh"
-```
-
----
-
-### 5. Add Environment Profiles
+### 2. Add Environment Profiles
 **Effort:** Medium | **Impact:** High | **Time:** 40 min
 
 ```bash
@@ -425,174 +308,16 @@ chpwd_functions+=(auto_profile)
 
 ---
 
-### 6. ✅ Add SSH Config Template - COMPLETED
-**Effort:** Low | **Impact:** Medium | **Time:** 20 min | **Status:** ✅ Implemented (see section 8 above)
-
-```bash
-# config/ssh/config.template
-# SSH Configuration Template
-
-# Default settings
-Host *
-    AddKeysToAgent yes
-    UseKeychain yes
-    IdentityFile ~/.ssh/id_ed25519
-    ServerAliveInterval 60
-    ServerAliveCountMax 3
-    Compression yes
-
-# GitHub
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519
-    
-# GitLab
-Host gitlab.com
-    HostName gitlab.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519
-
-# Work servers (examples)
-# Host work-server
-#     HostName server.company.com
-#     User myusername
-#     Port 2222
-#     IdentityFile ~/.ssh/work_id_rsa
-
-# Jump host example
-# Host internal-server
-#     HostName 192.168.1.100
-#     ProxyJump bastion.company.com
-#     User myusername
-```
-
----
-
-### 7. ✅ Add Security Audit Script - COMPLETED
-**Effort:** Medium | **Impact:** High | **Time:** 45 min | **Status:** ✅ Implemented (see section 9 above)
-
-```bash
-# scripts/security-audit.sh
-#!/usr/bin/env bash
-# Audit dotfiles for potential security issues
-
-echo "🔒 Security Audit"
-echo "================="
-
-# Check for hard-coded secrets
-echo -e "\n1. Checking for potential secrets..."
-if rg -i '(password|secret|api_key|token|credentials).*=.*["\x27][^"\x27]+["\x27]' . \
-   --glob '!*.md' --glob '!*audit*' --glob '!SECRETS.md' 2>/dev/null; then
-    echo "⚠️  Found potential hard-coded secrets"
-else
-    echo "✅ No hard-coded secrets found"
-fi
-
-# Check file permissions
-echo -e "\n2. Checking file permissions..."
-if find . -type f -perm -002 2>/dev/null | grep -v ".git"; then
-    echo "⚠️  Found world-writable files"
-else
-    echo "✅ No world-writable files"
-fi
-
-# Check for .env files
-echo -e "\n3. Checking for .env files..."
-if find . -name ".env*" -type f 2>/dev/null | grep -v ".gitignore"; then
-    echo "⚠️  Found .env files (ensure they're in .gitignore)"
-else
-    echo "✅ No .env files found"
-fi
-
-# Check .gitignore coverage
-echo -e "\n4. Checking .gitignore coverage..."
-sensitive=("*.key" "*.pem" "*.p12" "*secret*" "*.env")
-missing=()
-for pattern in "${sensitive[@]}"; do
-    if ! grep -q "$pattern" .gitignore 2>/dev/null; then
-        missing+=("$pattern")
-    fi
-done
-
-if [[ ${#missing[@]} -gt 0 ]]; then
-    echo "⚠️  Missing patterns in .gitignore: ${missing[*]}"
-else
-    echo "✅ .gitignore covers sensitive patterns"
-fi
-
-# Check SSH permissions
-echo -e "\n5. Checking SSH configuration..."
-if [[ -d ~/.ssh ]]; then
-    if [[ $(stat -f %A ~/.ssh 2>/dev/null || stat -c %a ~/.ssh 2>/dev/null) == "700" ]]; then
-        echo "✅ ~/.ssh has correct permissions"
-    else
-        echo "⚠️  ~/.ssh should have 700 permissions"
-    fi
-fi
-
-echo -e "\n✅ Security audit complete"
-```
-
----
-
-### 8. ✅ Add CHANGELOG.md - COMPLETED
-**Effort:** Low | **Impact:** Medium | **Time:** 15 min | **Status:** ✅ Implemented (see section 10 above)
-
-```markdown
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-- GitHub Actions CI/CD pipeline
-- Pre-commit hooks configuration
-- Security audit script
-- Environment profile switcher
-
-## [2.0.0] - 2025-11-03
-
-### Added
-- XDG Base Directory compliance with .zshenv
-- Cross-platform login shell initialization with .zprofile
-- Comprehensive secrets management (5 methods)
-- Enhanced git configuration with 25+ aliases
-- Cross-platform completion system
-- Utility scripts (backup, update, profile)
-- Documentation (CUSTOMIZATION, TROUBLESHOOTING, SECRETS)
-
-### Fixed
-- Eliminated duplicate config loading in .zshrc
-- Performance improvements (smart caching)
-
-### Changed
-- Migrated from HTTPS to SSH for GitHub
-- Improved cross-platform compatibility
-
-## [1.0.0] - Initial Release
-
-### Added
-- Basic dotfiles structure
-- macOS and Linux support
-- Vim and Neovim configuration
-- Git configuration
-- ZSH configuration with plugins
-```
-
----
-
-### 9. ⚡ Enhance Makefile - PARTIALLY COMPLETED
-**Effort:** Low | **Impact:** Medium | **Time:** 20 min | **Status:** ⚡ Partially done
+### 3. ⚡ Enhance Makefile - MOSTLY COMPLETED
+**Effort:** Low | **Impact:** Low | **Time:** 10 min | **Status:** ⚡ Mostly done
 
 ✅ **Completed:**
-- Added `make security` target (implemented in v2.1.1)
+- Added `make security` target (v2.1.1) - calls scripts/security-audit.sh
+- Added `make restore` target (existing) - restores from latest backup
+- Added `make list` target (existing) - lists all Makefile targets
+- Added `make perf` target (existing) - performance testing
 
-📋 **Remaining targets to add:**
+📋 **Remaining targets to add (optional):**
 
 ```makefile
 ## Sync with remote
@@ -601,11 +326,6 @@ sync:
 	@git pull --rebase
 	@./scripts/update-all.sh
 	@git push
-
-## Restore from backup
-restore:
-	@echo "$(GREEN)Restoring from backup...$(NC)"
-	@./scripts/restore-dotfiles.sh
 
 ## List all Make targets
 list-all:
@@ -624,7 +344,7 @@ profile:
 
 ---
 
-### 10. Add FAQ Documentation
+### 4. Add FAQ Documentation
 **Effort:** Low | **Impact:** Medium | **Time:** 30 min
 
 ```markdown
@@ -722,62 +442,76 @@ cd ~/.dotfiles && make install
 
 ## 📊 Implementation Priority Matrix
 
+**Note:** Completed items (#2, #3, #6, #7, #8) have been removed from this matrix. See "Recently Completed" section above.
+
 | Priority | Effort | Impact | Status | Recommendation |
 |----------|--------|--------|--------|----------------|
-| 1. GitHub Actions | Low | High | 🔲 TODO | ⭐⭐⭐ Do First |
-| 2. Pre-commit Hooks | Low | Med | ✅ DONE | N/A |
-| 3. tmux Config | Med | High | ✅ DONE | N/A |
-| 4. Restore Script | Low | Med | 🔲 TODO | ⭐⭐ Do Next |
-| 5. Profiles | Med | High | 🔲 TODO | ⭐⭐ Do Next |
-| 6. SSH Template | Low | Med | ✅ DONE | N/A |
-| 7. Security Audit | Med | High | ✅ DONE | N/A |
-| 8. CHANGELOG | Low | Med | ✅ DONE | N/A |
-| 9. Makefile++ | Low | Med | ⚡ PARTIAL | ⭐ Complete remaining |
-| 10. FAQ | Low | Med | 🔲 TODO | ⭐ Nice to Have |
+| 1. GitHub Actions CI/CD | Low | High | 🔲 TODO | ⭐⭐⭐ Do First |
+| 2. Environment Profiles | Med | High | 🔲 TODO | ⭐⭐ Do Next |
+| 3. Makefile Enhancements | Low | Low | ⚡ MOSTLY DONE | ⭐ Optional |
+| 4. FAQ Documentation | Low | Med | 🔲 TODO | ⭐ Nice to Have |
 
-**Legend:** ✅ Done | ⚡ Partial | 🔲 TODO
+**Legend:** ✅ Done (in "Recently Completed") | ⚡ Partial | 🔲 TODO
+
+**Completed & Removed from Matrix:**
+- Pre-commit Hooks ✅
+- tmux Configuration ✅
+- SSH Config Template ✅
+- Security Audit Script ✅
+- CHANGELOG.md ✅
+- Restore target (in Makefile) ✅
 
 ---
 
 ## 🚀 Quick Start (Next Steps)
 
-### What You Can Do Now (90 minutes)
+### What You Already Have (Use These Now!)
 
 ```bash
-# 1. Install Pre-commit Hooks (5 min) - Already available!
+# Pre-commit Hooks - Install for automated quality checks
 cd ~/.dotfiles
 ./scripts/setup-pre-commit.sh
 
-# 2. Setup tmux (5 min) - Already configured!
+# tmux - Modern terminal multiplexer ready to use
 ln -sf ~/.dotfiles/config/tmux/tmux.conf ~/.tmux.conf
 tmux  # Try it out!
 
-# 3. Setup SSH Config (5 min) - Template ready!
+# SSH Config - Template with best practices
 cp ~/.dotfiles/config/ssh/config.template ~/.ssh/config
 chmod 600 ~/.ssh/config
 vim ~/.ssh/config  # Customize for your servers
 
-# 4. Run Security Audit (2 min)
+# Security Audit - Check for issues
 make security
 
-# 5. Add GitHub Actions (30 min) - Top priority remaining
+# Restore - Recover from latest backup if needed
+make restore
+```
+
+### Remaining Work (70 minutes total)
+
+```bash
+# 1. Add GitHub Actions (30 min) - ⭐⭐⭐ Top Priority
 mkdir -p .github/workflows
 # Create .github/workflows/test.yml (see section 1 above)
 
-# 6. Add Restore script (15 min) - Next priority
-# Create scripts/restore-dotfiles.sh (see section 4 above)
+# 2. Add Environment Profiles (40 min) - ⭐⭐ High Impact
+# Create config/zsh/profiles.zsh (see section 2 above)
 
-# 7. Add Environment Profiles (30 min) - High impact
-# Create config/zsh/profiles.zsh (see section 5 above)
+# 3. Complete Makefile (optional, 10 min) - ⭐ Nice to Have
+# Add sync target (see section 3 above)
 
-# 8. Test everything (5 min)
+# 4. Add FAQ Documentation (30 min) - ⭐ Nice to Have
+# Create docs/FAQ.md (see section 4 above)
+
+# Test everything
 make test
 make lint
 make security
 
-# 9. Commit and push
+# Commit and push
 git add .
-git commit -m "feat: add CI/CD, restore script, environment profiles"
+git commit -m "feat: add CI/CD and environment profiles"
 git push
 ```
 
@@ -798,13 +532,12 @@ git push
 
 ### Phase 1 (This Week): Quick Wins Remaining
 - 🔲 GitHub Actions CI/CD
-- 🔲 Restore script
-- 🔲 Environment profiles
-- ⚡ Complete Makefile enhancements
-- Estimated: 2-3 hours total
+- 🔲 Environment profiles  
+- ⚡ Complete Makefile enhancements (optional)
+- 🔲 FAQ documentation
+- Estimated: 1-2 hours total
 
 ### Phase 2 (This Month): Documentation
-- 🔲 FAQ documentation
 - 🔲 ARCHITECTURE guide
 - 🔲 CONTRIBUTING guide
 - Estimated: 2-3 hours total
@@ -846,7 +579,9 @@ git push
 - ✅ Professional version tracking (CHANGELOG)
 - ✅ Quality assurance (pre-commit hooks)
 
-**Remaining Work:** 5 quick wins (GitHub Actions, restore script, profiles, enhanced Makefile, FAQ)
+**Remaining Work:** 4 quick wins (GitHub Actions, environment profiles, Makefile enhancements, FAQ)
 
 Focus on these to reach **10/10 perfection**!
+
+**Note:** The restore functionality already exists in the Makefile (`make restore`), so that item has been removed from the roadmap.
 
