@@ -9,7 +9,7 @@ export ZSHRC_LOADED=1
 export ZSH_DISABLE_COMPFIX=true
 
 # History configuration
-export HISTFILE="$XDG_DATA_HOME/zsh/history"
+# HISTFILE is set in .zshenv for early availability
 export HISTSIZE=10000
 export SAVEHIST=10000
 setopt HIST_IGNORE_DUPS
@@ -44,12 +44,29 @@ setopt HIST_EXPIRE_DUPS_FIRST  # Expire duplicate entries first
 setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 
 # Load configurations in order (os-detection must be first)
-for config in "$ZDOTDIR"/{os-detection,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,secrets,local}.zsh; do
+for config in "$ZDOTDIR"/{os-detection,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
     [[ -r "$config" ]] && source "$config"
 done
 
-# Note: Package manager setup (Homebrew, etc.) is now handled in .zprofile
-# This ensures PATH is set correctly for both login and non-login shells
+# Package manager environment setup (after os-detection is loaded)
+if command -v is_macos >/dev/null && is_macos 2>/dev/null; then
+    # macOS - Homebrew is the standard package manager
+    if [[ -x "/opt/homebrew/bin/brew" ]]; then
+        # Apple Silicon macOS
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x "/usr/local/bin/brew" ]]; then
+        # Intel macOS
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+elif command -v is_linux >/dev/null && is_linux 2>/dev/null; then
+    # Linux - Native package managers don't need shellenv setup
+    # Only set up Homebrew if explicitly installed by user
+    if [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
+        eval "$($HOME/.linuxbrew/bin/brew shellenv)"
+    fi
+fi
 
 # Initialize completions (after all config loaded)
 autoload -Uz compinit
@@ -98,5 +115,4 @@ fi
 # if [[ -n "${ZSH_PROF:-}" ]]; then
 #     zprof
 # fi
-
-# Note: TMPDIR is now set in .zshenv for consistency across all shell sessions
+export TMPDIR=$HOME/tmp
