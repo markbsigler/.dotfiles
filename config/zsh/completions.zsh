@@ -1,90 +1,69 @@
 # ~/.config/zsh/completions.zsh - Enhanced completion settings
-# =============================================================================
 # Cross-platform zsh completion configuration
-# Supports: macOS (Intel & Apple Silicon), Linux (various distros)
-# =============================================================================
 
-# =============================================================================
-# Completion Path Setup (Platform-specific)
-# =============================================================================
-# Add completion directories to fpath before initializing completion system
+# ============================================================================
+# Completion Path Setup (Platform-Specific)
+# ============================================================================
 
-case "$(uname -s)" in
-    Darwin*)
-        # macOS - Homebrew completions
-        if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
-            # Apple Silicon
-            fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
-        fi
-        if [[ -d "/usr/local/share/zsh/site-functions" ]]; then
-            # Intel Mac
-            fpath=("/usr/local/share/zsh/site-functions" $fpath)
-        fi
-        ;;
-    Linux*)
-        # Linux - various package manager completion directories
-        
-        # Homebrew on Linux (if installed)
-        if [[ -d "/home/linuxbrew/.linuxbrew/share/zsh/site-functions" ]]; then
-            fpath=("/home/linuxbrew/.linuxbrew/share/zsh/site-functions" $fpath)
-        fi
-        
-        # System-wide zsh completions (common on Debian/Ubuntu)
-        if [[ -d "/usr/share/zsh/site-functions" ]]; then
-            fpath=("/usr/share/zsh/site-functions" $fpath)
-        fi
-        
-        # Fedora/RHEL/CentOS
-        if [[ -d "/usr/share/zsh/$ZSH_VERSION/functions" ]]; then
-            fpath=("/usr/share/zsh/$ZSH_VERSION/functions" $fpath)
-        fi
-        ;;
-esac
+# Add platform-specific completion paths to fpath (before compinit)
+# These must be added before compinit is called
 
-# User-local completions (custom completions)
-if [[ -d "$ZDOTDIR/completions" ]]; then
-    fpath=("$ZDOTDIR/completions" $fpath)
-fi
-if [[ -d "$HOME/.zsh/completions" ]]; then
-    fpath=("$HOME/.zsh/completions" $fpath)
+# macOS - Homebrew completions
+if [[ "$OSTYPE" == darwin* ]]; then
+    # Apple Silicon
+    [[ -d "/opt/homebrew/share/zsh/site-functions" ]] && \
+        fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+    # Intel Mac
+    [[ -d "/usr/local/share/zsh/site-functions" ]] && \
+        fpath=("/usr/local/share/zsh/site-functions" $fpath)
 fi
 
-# =============================================================================
+# Linux - System and Linuxbrew completions
+if [[ "$OSTYPE" == linux* ]]; then
+    # System completions
+    [[ -d "/usr/share/zsh/site-functions" ]] && \
+        fpath=("/usr/share/zsh/site-functions" $fpath)
+    [[ -d "/usr/local/share/zsh/site-functions" ]] && \
+        fpath=("/usr/local/share/zsh/site-functions" $fpath)
+    # Linuxbrew (if installed)
+    [[ -d "/home/linuxbrew/.linuxbrew/share/zsh/site-functions" ]] && \
+        fpath=("/home/linuxbrew/.linuxbrew/share/zsh/site-functions" $fpath)
+fi
+
+# User-local completions (highest priority)
+[[ -d "$HOME/.local/share/zsh/completions" ]] && \
+    fpath=("$HOME/.local/share/zsh/completions" $fpath)
+
+# ============================================================================
 # Completion System Initialization
-# =============================================================================
+# ============================================================================
 
-# Skip insecure directory warnings (useful when using mixed permissions)
+# Skip insecure directory warnings (common with Homebrew on macOS)
 export ZSH_DISABLE_COMPFIX=true
 
 # Load completion system
 autoload -Uz compinit
 
-# Smart completion cache (only rebuild once per day)
-# This significantly improves startup time
-typeset -i updated_at
+# Cross-platform cache management
+# Use XDG-compliant cache location
+export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompdump"
+mkdir -p "$XDG_CACHE_HOME/zsh" 2>/dev/null
 
-case "$(uname -s)" in
-    Darwin*)
-        # macOS stat
-        updated_at=$(stat -f '%Sm' -t '%j' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null || echo 0)
-        ;;
-    Linux*)
-        # GNU stat (Linux)
-        if stat --version &>/dev/null 2>&1; then
-            # GNU stat
-            updated_at=$(stat -c '%Y' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0)
-        else
-            # BSD stat (some Linux distros)
-            updated_at=$(stat -f '%Sm' -t '%j' "$XDG_CACHE_HOME/zsh/zcompdump" 2>/dev/null || echo 0)
-        fi
-        ;;
-esac
-
-# Only rebuild completion cache if older than a day
-if [[ ${updated_at} -lt $(date +'%j') ]]; then
-    compinit -i -d "$XDG_CACHE_HOME/zsh/zcompdump"
+# Smart compinit: only rebuild once per day (performance optimization)
+if [[ "$OSTYPE" == darwin* ]]; then
+    # macOS stat
+    if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(date +'%j') == $(stat -f '%Sm' -t '%j' "$ZSH_COMPDUMP" 2>/dev/null) ]]; then
+        compinit -C -d "$ZSH_COMPDUMP"
+    else
+        compinit -d "$ZSH_COMPDUMP"
+    fi
 else
-    compinit -C -i -d "$XDG_CACHE_HOME/zsh/zcompdump"
+    # Linux stat
+    if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(date +'%j') == $(stat -c '%Y' "$ZSH_COMPDUMP" 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0) ]]; then
+        compinit -C -d "$ZSH_COMPDUMP"
+    else
+        compinit -d "$ZSH_COMPDUMP"
+    fi
 fi
 
 # Set up completion menu navigation
@@ -138,12 +117,20 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' list-suffixes
 zstyle ':completion:*' expand prefix suffix
 
-# Cache completions
+# ============================================================================
+# Completion Caching (Performance)
+# ============================================================================
+
+# Enable completion caching for faster subsequent completions
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 
-# Create cache directory if it doesn't exist
-[[ ! -d "$XDG_CACHE_HOME/zsh" ]] && mkdir -p "$XDG_CACHE_HOME/zsh"
+# Ensure cache directory exists
+mkdir -p "$XDG_CACHE_HOME/zsh/zcompcache" 2>/dev/null
+
+# ============================================================================
+# Tool-Specific Completions (Cross-Platform)
+# ============================================================================
 
 # Docker completion
 if command -v docker &> /dev/null; then
@@ -151,7 +138,7 @@ if command -v docker &> /dev/null; then
     zstyle ':completion:*:*:docker-*:*' option-stacking yes
 fi
 
-# SSH/SCP hostname completion
+# SSH/SCP/Rsync hostname completion
 zstyle ':completion:*:(ssh|scp|rsync):*' tag-order 'hosts:-host:host hosts:-domain:domain hosts:-ipaddr:ip\ address *'
 zstyle ':completion:*:(scp|rsync):*' group-order users files all-files hosts-domain hosts-host hosts-ipaddr
 zstyle ':completion:*:ssh:*' group-order users hosts-domain hosts-host users hosts-ipaddr
@@ -159,98 +146,75 @@ zstyle ':completion:*:(ssh|scp|rsync):*:hosts-host' ignored-patterns '*(.|:)*' l
 zstyle ':completion:*:(ssh|scp|rsync):*:hosts-domain' ignored-patterns '<->.<->.<->.<->' '^[-[:alnum:]]##(.[-[:alnum:]]##)##' '*@*'
 zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<->.<->.<->|(|::)([[:xdigit:].]##:(#c,2))##(|%*))' '127.0.0.<->' '255.255.255.255' '::1' 'fe80::*'
 
-# =============================================================================
-# Tool-specific Completions (Cross-platform)
-# =============================================================================
-# Load completions for modern development tools if they're installed
+# ============================================================================
+# Modern CLI Tools (Cross-Platform)
+# ============================================================================
 
 # Kubernetes (kubectl)
 if command -v kubectl &> /dev/null; then
-    source <(kubectl completion zsh)
+    source <(kubectl completion zsh) 2>/dev/null
     alias k=kubectl
-    compdef kubectl k
+    compdef kubectl k 2>/dev/null
 fi
 
 # GitHub CLI
 if command -v gh &> /dev/null; then
-    eval "$(gh completion -s zsh)"
+    eval "$(gh completion -s zsh)" 2>/dev/null
 fi
 
 # Helm (Kubernetes package manager)
 if command -v helm &> /dev/null; then
-    source <(helm completion zsh)
+    source <(helm completion zsh) 2>/dev/null
 fi
 
 # Terraform
 if command -v terraform &> /dev/null; then
-    complete -o nospace -C terraform terraform
+    autoload -U +X bashcompinit && bashcompinit
+    complete -o nospace -C terraform terraform 2>/dev/null
 fi
 
-# Python/pip completion
+# ============================================================================
+# Language-Specific Completions (Cross-Platform)
+# ============================================================================
+
+# Python/pip
 if command -v pip &> /dev/null; then
     eval "$(pip completion --zsh)" 2>/dev/null
-fi
-if command -v pip3 &> /dev/null; then
+elif command -v pip3 &> /dev/null; then
     eval "$(pip3 completion --zsh)" 2>/dev/null
 fi
 
-# Poetry (Python dependency management)
-if command -v poetry &> /dev/null; then
-    poetry completions zsh > "$ZDOTDIR/completions/_poetry" 2>/dev/null
-fi
-
-# Cargo (Rust package manager)
+# Rust (rustup)
 if command -v rustup &> /dev/null; then
-    rustup completions zsh > "$ZDOTDIR/completions/_rustup" 2>/dev/null
-    rustup completions zsh cargo > "$ZDOTDIR/completions/_cargo" 2>/dev/null
+    compdef _rustup rustup 2>/dev/null
 fi
 
-# AWS CLI completion (cross-platform paths)
+# ============================================================================
+# Cloud Provider CLIs (Cross-Platform)
+# ============================================================================
+
+# AWS CLI (platform-specific paths)
 if command -v aws &> /dev/null; then
-    # Try various possible locations for aws_completer
-    for completer_path in \
-        "/opt/homebrew/bin/aws_completer" \
-        "/usr/local/bin/aws_completer" \
-        "/usr/bin/aws_completer" \
-        "$(dirname $(which aws))/aws_completer"; do
-        if [[ -f "$completer_path" ]]; then
-            complete -C "$completer_path" aws
-            break
-        fi
-    done
+    # macOS Homebrew
+    if [[ "$OSTYPE" == darwin* ]] && [[ -f /opt/homebrew/bin/aws_completer ]]; then
+        complete -C /opt/homebrew/bin/aws_completer aws
+    elif [[ "$OSTYPE" == darwin* ]] && [[ -f /usr/local/bin/aws_completer ]]; then
+        complete -C /usr/local/bin/aws_completer aws
+    # Linux
+    elif [[ "$OSTYPE" == linux* ]] && [[ -f /usr/local/bin/aws_completer ]]; then
+        complete -C /usr/local/bin/aws_completer aws
+    elif [[ "$OSTYPE" == linux* ]] && [[ -f /usr/bin/aws_completer ]]; then
+        complete -C /usr/bin/aws_completer aws
+    fi
 fi
 
-# Docker Compose (both v1 and v2)
-if command -v docker-compose &> /dev/null; then
-    compdef _docker-compose docker-compose
-fi
-if command -v docker &> /dev/null; then
-    # Docker compose v2 (docker compose)
-    compdef _docker docker
+# Google Cloud SDK
+if [[ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]]; then
+    source "$HOME/google-cloud-sdk/completion.zsh.inc"
 fi
 
-# Vagrant
-if command -v vagrant &> /dev/null; then
-    compdef _vagrant vagrant
+# Azure CLI
+if command -v az &> /dev/null && [[ -f /etc/bash_completion.d/azure-cli ]]; then
+    autoload -U +X bashcompinit && bashcompinit
+    source /etc/bash_completion.d/azure-cli 2>/dev/null
 fi
-
-# Make
-if command -v make &> /dev/null; then
-    compdef _make make
-fi
-
-# npm/yarn/pnpm
-if command -v npm &> /dev/null; then
-    compdef _npm npm
-fi
-if command -v yarn &> /dev/null; then
-    compdef _yarn yarn
-fi
-if command -v pnpm &> /dev/null; then
-    # pnpm completion
-    [[ -f "$HOME/.config/tabtab/zsh/__tabtab.zsh" ]] && source "$HOME/.config/tabtab/zsh/__tabtab.zsh"
-fi
-
-# Git (enhanced)
-compdef _git git
-compdef _git g  # if you use 'g' as git alias
