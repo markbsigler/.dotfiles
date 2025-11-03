@@ -41,13 +41,28 @@ Welcome to the comprehensive documentation for this dotfiles repository. This pa
   - Diagnostic commands
 - **[GitHub Authentication](../GITHUB_AUTH_SETUP.md)** - SSH and token setup for GitHub
 
+### Additional Configuration
+
+- **[tmux Configuration](../config/tmux/README.md)** - Terminal multiplexer setup
+  - Modern tmux configuration
+  - Key bindings reference
+  - Customization options
+- **[SSH Configuration](../config/ssh/README.md)** - SSH setup guide
+  - Template configuration
+  - Security best practices
+  - Jump host setup
+
 ### Development & Roadmap
 
 - **[IMPROVEMENTS_ROADMAP.md](../IMPROVEMENTS_ROADMAP.md)** - Future enhancements
-  - 26 potential improvements
+  - 21 potential improvements
   - Priority matrix
   - Implementation guides
   - Time estimates
+- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and changes
+  - Complete project history
+  - Semantic versioning
+  - Release notes
 
 ## 🚀 Quick Reference
 
@@ -67,6 +82,7 @@ make plugins            # Update Zsh plugins
 make doctor             # System health check
 make test               # Run comprehensive test suite
 make lint               # Lint shell scripts with shellcheck
+make security           # Run security audit (secrets, permissions)
 
 # Utilities
 make fonts              # Install Nerd Fonts
@@ -226,10 +242,14 @@ scripts/update-all.sh
 make doctor         # Comprehensive health check
 make test           # Run all tests
 make lint           # Check shell scripts
+make security       # Security audit (secrets, permissions)
 
 # Profile performance
 scripts/profile-startup.sh
 scripts/profile-startup.sh --detailed
+
+# Security audit
+scripts/security-audit.sh
 ```
 
 ### Common Issues
@@ -286,6 +306,8 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for comprehensive solutions.
 - ✅ Comprehensive test suite
 - ✅ Automated CI/CD ready
 - ✅ Cross-platform tested
+- ✅ Pre-commit hooks available (run `scripts/setup-pre-commit.sh`)
+- 🔒 Security audit script for checking secrets and permissions
 
 ## 🤝 Contributing
 
@@ -309,7 +331,7 @@ MIT License - see [LICENSE](../LICENSE) for details.
 
 **Last Updated:** November 2025
 
-**Documentation Version:** 2.0
+**Documentation Version:** 2.1
 
 **Repository:** [github.com/markbsigler/.dotfiles](https://github.com/markbsigler/.dotfiles)
 

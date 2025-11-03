@@ -138,6 +138,7 @@ make packages       # Install packages only
 make doctor         # Health check and diagnostics
 make test           # Run comprehensive test suite ✅
 make lint           # Lint shell scripts with shellcheck ✅
+make security       # Run security audit (checks for secrets, permissions) 🔒
 make plugins        # Update Zsh plugins
 make fonts          # Install Agave Nerd Font
 ```
@@ -146,6 +147,8 @@ make fonts          # Install Agave Nerd Font
 - ✅ All shell scripts pass shellcheck (0 issues)
 - ✅ Comprehensive test suite for ZSH, Vim, and shell scripts
 - ✅ Cross-platform tested on macOS and Linux
+- ✅ Pre-commit hooks available for automated quality checks
+- 🔒 Security audit script for checking secrets and permissions
 
 ## 🔍 Environment Detection
 
@@ -251,13 +254,21 @@ Complete documentation for customization, troubleshooting, and advanced features
 - **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** - How to customize your dotfiles
 - **[docs/SECRETS.md](docs/SECRETS.md)** - Secure secrets management (5 methods)
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md)** - Future enhancements (26 ideas)
+- **[IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md)** - Future enhancements (21 ideas)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 - **[GITHUB_AUTH_SETUP.md](GITHUB_AUTH_SETUP.md)** - GitHub authentication setup
+
+**Configuration Guides:**
+- **[config/tmux/README.md](config/tmux/README.md)** - tmux setup and key bindings
+- **[config/ssh/README.md](config/ssh/README.md)** - SSH configuration guide
+- **[config/zsh/README.md](config/zsh/README.md)** - Zsh-specific documentation
 
 **Quick Links:**
 - Customize: `~/.config/zsh/local.zsh` for machine-specific settings
 - Functions: See `config/zsh/functions.zsh` for all available functions
 - Secrets: Run `secret_help` for secrets management options
+- Security: Run `make security` or `./scripts/security-audit.sh`
+- Pre-commit: Run `./scripts/setup-pre-commit.sh` to install hooks
 
 ## 📝 License
 

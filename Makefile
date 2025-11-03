@@ -176,6 +176,11 @@ lint:
 		fi; \
 	fi
 
+## Run security audit
+security:
+	@echo "$(GREEN)Running security audit...$(NC)"
+	@./scripts/security-audit.sh
+
 ## Clean up backup directories and logs
 clean:
 	@echo "$(GREEN)Cleaning up...$(NC)"

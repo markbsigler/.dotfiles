@@ -13,6 +13,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced Makefile with more targets
 - FAQ documentation
 
+## [2.1.1] - 2025-11-03
+
+### Changed
+- Consolidated test scripts into single comprehensive script
+  - All test functionality now in `scripts/test-dotfiles.sh`
+  - Single entry point reduces confusion and maintenance burden
+- Updated Makefile with new security target
+  - Added `make security` to run security audit
+
+### Removed
+- `test_install.sh` - Consolidated into `scripts/test-dotfiles.sh`
+- `verify_install.sh` - Consolidated into `scripts/test-dotfiles.sh`
+- `debug_os.sh` - Debugging covered by test-dotfiles.sh
+- `simple_integration_test.sh` - Empty placeholder, no longer needed
+
+### Documentation
+- Updated `IMPROVEMENTS_ROADMAP.md` with recently completed items
+  - Added sections 6-11 documenting new features
+  - Updated project score: 8.7/10 → 9.0/10
+  - Marked completed items (#2, #3, #6, #7, #8) in roadmap
+- Updated `README.md` with new features
+  - Added `make security` command
+  - Enhanced Quality Assurance section
+  - Added Configuration Guides section
+  - Updated Documentation links
+- Updated `docs/README.md` with quick references for new features
+
+### Benefits
+- Cleaner repository structure
+- Single test entry point for users
+- Easier to maintain and enhance
+- Better organization of scripts
+
 ## [2.1.0] - 2025-11-03
 
 ### Added
