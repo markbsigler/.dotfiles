@@ -296,4 +296,4 @@ See the [main repository](../../README.md#-contributing) for contribution guidel
 
 **Last Updated:** November 2025
 
-For the latest changes, see [IMPROVEMENTS_ROADMAP.md](../../IMPROVEMENTS_ROADMAP.md)
+For planned improvements, see [ROADMAP.md](../../ROADMAP.md) | For completed changes, see [CHANGELOG.md](../../CHANGELOG.md)
