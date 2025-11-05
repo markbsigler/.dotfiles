@@ -212,7 +212,7 @@ Changes are grouped into these categories:
 
 ## See Also
 
-- [IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md) - Planned improvements
+- [ROADMAP.md](ROADMAP.md) - Planned improvements and future enhancements
 - [docs/](docs/) - Complete documentation
 - [GitHub Releases](https://github.com/markbsigler/.dotfiles/releases) - Tagged releases
 

@@ -254,7 +254,7 @@ Complete documentation for customization, troubleshooting, and advanced features
 - **[docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md)** - How to customize your dotfiles
 - **[docs/SECRETS.md](docs/SECRETS.md)** - Secure secrets management (5 methods)
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[IMPROVEMENTS_ROADMAP.md](IMPROVEMENTS_ROADMAP.md)** - Future enhancements (21 ideas)
+- **[ROADMAP.md](ROADMAP.md)** - Future enhancements and planned improvements
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 - **[GITHUB_AUTH_SETUP.md](GITHUB_AUTH_SETUP.md)** - GitHub authentication setup
 

@@ -54,11 +54,11 @@ Welcome to the comprehensive documentation for this dotfiles repository. This pa
 
 ### Development & Roadmap
 
-- **[IMPROVEMENTS_ROADMAP.md](../IMPROVEMENTS_ROADMAP.md)** - Future enhancements
-  - 21 potential improvements
+- **[ROADMAP.md](../ROADMAP.md)** - Future enhancements and planned improvements
+  - Remaining quick wins
   - Priority matrix
   - Implementation guides
-  - Time estimates
+  - Long-term roadmap
 - **[CHANGELOG.md](../CHANGELOG.md)** - Version history and changes
   - Complete project history
   - Semantic versioning
@@ -174,7 +174,8 @@ clean_path              # Remove duplicate PATH entries
 ```
 .dotfiles/
 ├── README.md                    # Main documentation
-├── IMPROVEMENTS_ROADMAP.md      # Future enhancements
+├── ROADMAP.md                   # Future enhancements
+├── CHANGELOG.md                 # Version history
 ├── GITHUB_AUTH_SETUP.md         # GitHub auth guide
 │
 ├── docs/
