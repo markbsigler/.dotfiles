@@ -299,9 +299,3 @@ alias aid="aider"
 alias aid-proj="aider-project"
 alias aid-help="aider --help"
 alias ollama-check="curl -s http://localhost:11434/api/tags | head -20"
-
-# Aider AI coding assistance
-alias aid="aider"
-alias aid-proj="aider-project"
-alias aid-help="aider --help"
-alias ollama-check="curl -s http://localhost:11434/api/tags | head -20"

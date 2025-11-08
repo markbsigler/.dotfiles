@@ -123,7 +123,6 @@ if command -v pass &> /dev/null; then
             echo "❌ Failed to load secret from pass:${pass_path}"
             return 1
         fi
-    fi
 fi
 
 # ============================================================================
