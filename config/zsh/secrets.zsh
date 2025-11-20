@@ -99,152 +99,177 @@ secret_remove() {
 # Method 2: Password Store (pass) - More Secure
 # ============================================================================
 
-# Setup pass (password-store) integration if available
-if command -v pass &> /dev/null; then
-    # Example: Load GitHub token from pass
-    # export GITHUB_TOKEN=$(pass show github/token 2>/dev/null)
+# Helper function to load a secret from pass
+secret_from_pass() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: secret_from_pass <ENV_VAR> <pass-path>"
+        echo "Example: secret_from_pass GITHUB_TOKEN github/token"
+        return 1
+    fi
     
-    # Helper function to load a secret from pass
-    secret_from_pass() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: secret_from_pass <ENV_VAR> <pass-path>"
-            echo "Example: secret_from_pass GITHUB_TOKEN github/token"
-            return 1
-        fi
-        
-        local env_var="$1"
-        local pass_path="$2"
-        
-        local value=$(pass show "$pass_path" 2>/dev/null)
-        if [[ -n "$value" ]]; then
-            export "${env_var}=${value}"
-            echo "✅ Loaded ${env_var} from pass:${pass_path}"
-        else
-            echo "❌ Failed to load secret from pass:${pass_path}"
-            return 1
-        fi
-fi
+    if ! command -v pass &> /dev/null; then
+        echo "❌ pass command not found. Install password-store to use this function."
+        return 1
+    fi
+    
+    local env_var="$1"
+    local pass_path="$2"
+    
+    local value=$(pass show "$pass_path" 2>/dev/null)
+    if [[ -n "$value" ]]; then
+        export "${env_var}=${value}"
+        echo "✅ Loaded ${env_var} from pass:${pass_path}"
+    else
+        echo "❌ Failed to load secret from pass:${pass_path}"
+        return 1
+    fi
+}
 
 # ============================================================================
 # Method 3: 1Password CLI - Most Secure
 # ============================================================================
 
-# Setup 1Password CLI integration if available
-if command -v op &> /dev/null; then
-    # Example: Load GitHub token from 1Password
-    # export GITHUB_TOKEN=$(op read "op://Personal/GitHub/token" 2>/dev/null)
-    
-    # Helper function to load a secret from 1Password
-    secret_from_1password() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: secret_from_1password <ENV_VAR> <op-reference>"
-            echo "Example: secret_from_1password GITHUB_TOKEN 'op://Personal/GitHub/token'"
-            return 1
-        fi
-        
-        local env_var="$1"
-        local op_ref="$2"
-        
-        local value=$(op read "$op_ref" 2>/dev/null)
-        if [[ -n "$value" ]]; then
-            export "${env_var}=${value}"
-            echo "✅ Loaded ${env_var} from 1Password"
-        else
-            echo "❌ Failed to load secret from 1Password"
-            echo "   Make sure you're signed in: op signin"
-            return 1
-        fi
+# Helper function to load a secret from 1Password
+secret_from_1password() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: secret_from_1password <ENV_VAR> <op-reference>"
+        echo "Example: secret_from_1password GITHUB_TOKEN 'op://Personal/GitHub/token'"
+        return 1
     fi
-fi
+    
+    if ! command -v op &> /dev/null; then
+        echo "❌ op command not found. Install 1Password CLI to use this function."
+        return 1
+    fi
+    
+    local env_var="$1"
+    local op_ref="$2"
+    
+    local value=$(op read "$op_ref" 2>/dev/null)
+    if [[ -n "$value" ]]; then
+        export "${env_var}=${value}"
+        echo "✅ Loaded ${env_var} from 1Password"
+    else
+        echo "❌ Failed to load secret from 1Password"
+        echo "   Make sure you're signed in: op signin"
+        return 1
+    fi
+}
 
 # ============================================================================
 # Method 4: macOS Keychain
 # ============================================================================
 
-if [[ "$OSTYPE" == darwin* ]]; then
-    # Helper function to load a secret from macOS Keychain
-    secret_from_keychain() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: secret_from_keychain <ENV_VAR> <service-name>"
-            echo "Example: secret_from_keychain GITHUB_TOKEN github_token"
-            return 1
-        fi
-        
-        local env_var="$1"
-        local service="$2"
-        
-        local value=$(security find-generic-password -s "$service" -w 2>/dev/null)
-        if [[ -n "$value" ]]; then
-            export "${env_var}=${value}"
-            echo "✅ Loaded ${env_var} from Keychain"
-        else
-            echo "❌ Failed to load secret from Keychain service: $service"
-            return 1
-        fi
-    }
+# Helper function to load a secret from macOS Keychain
+secret_from_keychain() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: secret_from_keychain <ENV_VAR> <service-name>"
+        echo "Example: secret_from_keychain GITHUB_TOKEN github_token"
+        return 1
+    fi
     
-    # Helper to add a secret to Keychain
-    keychain_add() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: keychain_add <service-name> <secret>"
-            echo "Example: keychain_add github_token ghp_xxxxxxxxxxxx"
-            return 1
-        fi
-        
-        local service="$1"
-        local secret="$2"
-        local account="${USER}"
-        
-        # Delete existing if present
-        security delete-generic-password -s "$service" 2>/dev/null
-        
-        # Add new secret
-        security add-generic-password -s "$service" -a "$account" -w "$secret"
-        echo "✅ Secret added to Keychain service: $service"
-    }
-fi
+    if [[ "$OSTYPE" != darwin* ]]; then
+        echo "❌ This function requires macOS"
+        return 1
+    fi
+    
+    local env_var="$1"
+    local service="$2"
+    
+    local value=$(security find-generic-password -s "$service" -w 2>/dev/null)
+    if [[ -n "$value" ]]; then
+        export "${env_var}=${value}"
+        echo "✅ Loaded ${env_var} from Keychain"
+    else
+        echo "❌ Failed to load secret from Keychain service: $service"
+        return 1
+    fi
+}
+
+# Helper to add a secret to Keychain
+keychain_add() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: keychain_add <service-name> <secret>"
+        echo "Example: keychain_add github_token ghp_xxxxxxxxxxxx"
+        return 1
+    fi
+    
+    if [[ "$OSTYPE" != darwin* ]]; then
+        echo "❌ This function requires macOS"
+        return 1
+    fi
+    
+    local service="$1"
+    local secret="$2"
+    local account="${USER}"
+    
+    # Delete existing if present
+    security delete-generic-password -s "$service" 2>/dev/null
+    
+    # Add new secret
+    security add-generic-password -s "$service" -a "$account" -w "$secret"
+    echo "✅ Secret added to Keychain service: $service"
+}
 
 # ============================================================================
 # Method 5: Linux Secret Service (GNOME Keyring / KWallet)
 # ============================================================================
 
-if [[ "$OSTYPE" == linux* ]] && command -v secret-tool &> /dev/null; then
-    # Helper function to load a secret from Linux Secret Service
-    secret_from_keyring() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: secret_from_keyring <ENV_VAR> <service-name>"
-            echo "Example: secret_from_keyring GITHUB_TOKEN github_token"
-            return 1
-        fi
-        
-        local env_var="$1"
-        local service="$2"
-        
-        local value=$(secret-tool lookup service "$service" 2>/dev/null)
-        if [[ -n "$value" ]]; then
-            export "${env_var}=${value}"
-            echo "✅ Loaded ${env_var} from Secret Service"
-        else
-            echo "❌ Failed to load secret from Secret Service: $service"
-            return 1
-        fi
-    }
+# Helper function to load a secret from Linux Secret Service
+secret_from_keyring() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: secret_from_keyring <ENV_VAR> <service-name>"
+        echo "Example: secret_from_keyring GITHUB_TOKEN github_token"
+        return 1
+    fi
     
-    # Helper to add a secret to Secret Service
-    keyring_add() {
-        if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-            echo "Usage: keyring_add <service-name> <secret>"
-            echo "Example: keyring_add github_token ghp_xxxxxxxxxxxx"
-            return 1
-        fi
-        
-        local service="$1"
-        local secret="$2"
-        
-        echo -n "$secret" | secret-tool store --label="$service" service "$service"
-        echo "✅ Secret added to Secret Service: $service"
-    }
-fi
+    if [[ "$OSTYPE" != linux* ]]; then
+        echo "❌ This function requires Linux"
+        return 1
+    fi
+    
+    if ! command -v secret-tool &> /dev/null; then
+        echo "❌ secret-tool command not found. Install libsecret to use this function."
+        return 1
+    fi
+    
+    local env_var="$1"
+    local service="$2"
+    
+    local value=$(secret-tool lookup service "$service" 2>/dev/null)
+    if [[ -n "$value" ]]; then
+        export "${env_var}=${value}"
+        echo "✅ Loaded ${env_var} from Secret Service"
+    else
+        echo "❌ Failed to load secret from Secret Service: $service"
+        return 1
+    fi
+}
+
+# Helper to add a secret to Secret Service
+keyring_add() {
+    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+        echo "Usage: keyring_add <service-name> <secret>"
+        echo "Example: keyring_add github_token ghp_xxxxxxxxxxxx"
+        return 1
+    fi
+    
+    if [[ "$OSTYPE" != linux* ]]; then
+        echo "❌ This function requires Linux"
+        return 1
+    fi
+    
+    if ! command -v secret-tool &> /dev/null; then
+        echo "❌ secret-tool command not found. Install libsecret to use this function."
+        return 1
+    fi
+    
+    local service="$1"
+    local secret="$2"
+    
+    echo -n "$secret" | secret-tool store --label="$service" service "$service"
+    echo "✅ Secret added to Secret Service: $service"
+}
 
 # ============================================================================
 # Helper Functions
