@@ -106,3 +106,6 @@ export NVM_DIR="$HOME/.config/nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Added by Antigravity
+export PATH="/Users/msigler/.antigravity/antigravity/bin:$PATH"

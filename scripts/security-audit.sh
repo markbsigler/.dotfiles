@@ -158,9 +158,9 @@ if [[ -d ~/.ssh ]]; then
     # Check .ssh directory permissions
     ssh_perms=$(stat -f %A ~/.ssh 2>/dev/null || stat -c %a ~/.ssh 2>/dev/null)
     if [[ "$ssh_perms" == "700" ]]; then
-        success "~/.ssh has correct permissions (700)"
+        success "$HOME/.ssh has correct permissions (700)"
     else
-        warning "~/.ssh should have 700 permissions (current: $ssh_perms)"
+        warning "$HOME/.ssh should have 700 permissions (current: $ssh_perms)"
         echo "   Run: chmod 700 ~/.ssh"
     fi
     
@@ -180,14 +180,14 @@ if [[ -d ~/.ssh ]]; then
     if [[ -f ~/.ssh/config ]]; then
         config_perms=$(stat -f %A ~/.ssh/config 2>/dev/null || stat -c %a ~/.ssh/config 2>/dev/null)
         if [[ "$config_perms" == "600" ]]; then
-            success "~/.ssh/config has correct permissions (600)"
+            success "$HOME/.ssh/config has correct permissions (600)"
         else
-            warning "~/.ssh/config should have 600 permissions (current: $config_perms)"
+            warning "$HOME/.ssh/config should have 600 permissions (current: $config_perms)"
             echo "   Run: chmod 600 ~/.ssh/config"
         fi
     fi
 else
-    info "~/.ssh directory not found (not necessarily a problem)"
+    info "$HOME/.ssh directory not found (not necessarily a problem)"
 fi
 
 # ============================================================================
@@ -201,9 +201,9 @@ if [[ -d ~/.secrets ]]; then
     # Check directory permissions
     secrets_perms=$(stat -f %A ~/.secrets 2>/dev/null || stat -c %a ~/.secrets 2>/dev/null)
     if [[ "$secrets_perms" == "700" ]]; then
-        success "~/.secrets has correct permissions (700)"
+        success "$HOME/.secrets has correct permissions (700)"
     else
-        warning "~/.secrets should have 700 permissions (current: $secrets_perms)"
+        warning "$HOME/.secrets should have 700 permissions (current: $secrets_perms)"
         echo "   Run: chmod 700 ~/.secrets"
     fi
     
@@ -211,9 +211,9 @@ if [[ -d ~/.secrets ]]; then
     if [[ -f ~/.secrets/env ]]; then
         env_perms=$(stat -f %A ~/.secrets/env 2>/dev/null || stat -c %a ~/.secrets/env 2>/dev/null)
         if [[ "$env_perms" == "600" ]]; then
-            success "~/.secrets/env has correct permissions (600)"
+            success "$HOME/.secrets/env has correct permissions (600)"
         else
-            warning "~/.secrets/env should have 600 permissions (current: $env_perms)"
+            warning "$HOME/.secrets/env should have 600 permissions (current: $env_perms)"
             echo "   Run: chmod 600 ~/.secrets/env"
         fi
     fi
@@ -226,7 +226,7 @@ if [[ -d ~/.secrets ]]; then
         echo "   Add '.secrets/' to .gitignore immediately"
     fi
 else
-    info "~/.secrets directory not found (create with 'mkdir -m 700 ~/.secrets' if needed)"
+    info "$HOME/.secrets directory not found (create with 'mkdir -m 700 $HOME/.secrets' if needed)"
 fi
 
 # ============================================================================
