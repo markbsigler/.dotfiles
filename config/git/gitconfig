@@ -135,3 +135,9 @@
 	path = ~/.config/git/gitconfig-linux
 
 # Credential helpers are configured in platform-specific files above
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
