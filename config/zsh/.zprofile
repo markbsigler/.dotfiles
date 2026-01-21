@@ -7,7 +7,17 @@
 
 # Prevent double-loading
 [[ -n "$ZPROFILE_LOADED" ]] && return
-export ZPROFILE_LOADED=1
+ZPROFILE_LOADED=1
+
+# Safe PATH helper: add only existing, non-duplicate entries (prepend)
+if ! typeset -f add_to_path >/dev/null 2>&1; then
+add_to_path() {
+    local target="$1"
+    if [[ -d "$target" && ":$PATH:" != *":$target:"* ]]; then
+        PATH="$target:$PATH"
+    fi
+}
+fi
 
 # ============================================================================
 # Package Manager Setup (Cross-Platform)
@@ -39,27 +49,21 @@ fi
 # ============================================================================
 
 # User-local binaries (highest priority)
-[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
-[[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
+add_to_path "$HOME/.local/bin"
+add_to_path "$HOME/bin"
 
 # ============================================================================
 # Language-Specific Setup (Cross-Platform)
 # ============================================================================
 
 # Rust/Cargo
-if [[ -d "$HOME/.cargo/bin" ]]; then
-    export PATH="$HOME/.cargo/bin:$PATH"
-fi
+add_to_path "$HOME/.cargo/bin"
 
 # Go
-if [[ -d "$HOME/go/bin" ]]; then
-    export PATH="$HOME/go/bin:$PATH"
-fi
+add_to_path "$HOME/go/bin"
 
 # Node.js global packages (npm)
-if [[ -d "$HOME/.npm-global/bin" ]]; then
-    export PATH="$HOME/.npm-global/bin:$PATH"
-fi
+add_to_path "$HOME/.npm-global/bin"
 
 # ============================================================================
 # Platform-Specific GNU Tools (macOS)
@@ -70,28 +74,20 @@ if [[ "$OSTYPE" == darwin* ]]; then
     # These paths are only added if Homebrew installed them
     
     # GNU coreutils (ls, cat, etc.)
-    [[ -d "/opt/homebrew/opt/coreutils/libexec/gnubin" ]] && \
-        export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
-    [[ -d "/usr/local/opt/coreutils/libexec/gnubin" ]] && \
-        export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+    add_to_path "/opt/homebrew/opt/coreutils/libexec/gnubin"
+    add_to_path "/usr/local/opt/coreutils/libexec/gnubin"
     
     # GNU findutils (find, xargs, etc.)
-    [[ -d "/opt/homebrew/opt/findutils/libexec/gnubin" ]] && \
-        export PATH="/opt/homebrew/opt/findutils/libexec/gnubin:$PATH"
-    [[ -d "/usr/local/opt/findutils/libexec/gnubin" ]] && \
-        export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
+    add_to_path "/opt/homebrew/opt/findutils/libexec/gnubin"
+    add_to_path "/usr/local/opt/findutils/libexec/gnubin"
     
     # GNU tar
-    [[ -d "/opt/homebrew/opt/gnu-tar/libexec/gnubin" ]] && \
-        export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
-    [[ -d "/usr/local/opt/gnu-tar/libexec/gnubin" ]] && \
-        export PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
+    add_to_path "/opt/homebrew/opt/gnu-tar/libexec/gnubin"
+    add_to_path "/usr/local/opt/gnu-tar/libexec/gnubin"
     
     # GNU sed
-    [[ -d "/opt/homebrew/opt/gnu-sed/libexec/gnubin" ]] && \
-        export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
-    [[ -d "/usr/local/opt/gnu-sed/libexec/gnubin" ]] && \
-        export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+    add_to_path "/opt/homebrew/opt/gnu-sed/libexec/gnubin"
+    add_to_path "/usr/local/opt/gnu-sed/libexec/gnubin"
 fi
 
 # ============================================================================
