@@ -3,7 +3,7 @@
 
 # Prevent double-loading
 [[ -n "$ZSHRC_LOADED" ]] && return
-export ZSHRC_LOADED=1
+ZSHRC_LOADED=1
 
 # Skip insecure directory warnings (common with mixed ownership)
 export ZSH_DISABLE_COMPFIX=true
@@ -44,8 +44,27 @@ setopt HIST_EXPIRE_DUPS_FIRST  # Expire duplicate entries first
 setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 
 # Load configurations in order (os-detection must be first)
-# secrets.zsh loads early to make secrets available to other configs
-for config in "$ZDOTDIR"/{os-detection,secrets,exports,package-manager,aliases,functions,completions,vi-mode,history,python,version-managers,plugins,fzf,dev-tools,ssh-config,local}.zsh; do
+# Use an explicit list to avoid relying on brace expansion being enabled
+configs=(
+    "$ZDOTDIR/os-detection.zsh"
+    "$ZDOTDIR/secrets.zsh"
+    "$ZDOTDIR/exports.zsh"
+    "$ZDOTDIR/package-manager.zsh"
+    "$ZDOTDIR/aliases.zsh"
+    "$ZDOTDIR/functions.zsh"
+    "$ZDOTDIR/completions.zsh"
+    "$ZDOTDIR/vi-mode.zsh"
+    "$ZDOTDIR/history.zsh"
+    "$ZDOTDIR/python.zsh"
+    "$ZDOTDIR/version-managers.zsh"
+    "$ZDOTDIR/plugins.zsh"
+    "$ZDOTDIR/fzf.zsh"
+    "$ZDOTDIR/dev-tools.zsh"
+    "$ZDOTDIR/ssh-config.zsh"
+    "$ZDOTDIR/local.zsh"
+)
+
+for config in "${configs[@]}"; do
     [[ -r "$config" ]] && source "$config"
 done
 
@@ -108,4 +127,13 @@ export NVM_DIR="$HOME/.config/nvm"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Added by Antigravity
-export PATH="/Users/msigler/.antigravity/antigravity/bin:$PATH"
+add_to_path "/Users/msigler/.antigravity/antigravity/bin"
+
+# Ensure PATH gets deduped on load and before each prompt
+clean_path_once() {
+    typeset -f clean_path >/dev/null 2>&1 && clean_path
+}
+
+clean_path_once
+typeset -ga precmd_functions
+precmd_functions+=clean_path_once

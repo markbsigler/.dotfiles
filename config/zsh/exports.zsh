@@ -18,36 +18,63 @@ fi
 # Note: Core PATH setup is in .zprofile (loaded for login shells)
 # Additional platform-specific paths for interactive shells
 
+# Safe PATH helper (defined here if not already available from .zprofile)
+if ! typeset -f add_to_path >/dev/null 2>&1; then
+add_to_path() {
+    local target="$1"
+    if [[ -d "$target" && ":$PATH:" != *":$target:"* ]]; then
+        PATH="$target:$PATH"
+    fi
+}
+fi
+
 if is_linux; then
     # Linux-specific package system paths
     
     # Snap packages (Ubuntu/Pop!_OS/etc.)
-    [[ -d "/snap/bin" ]] && export PATH="/snap/bin:$PATH"
+    add_to_path "/snap/bin"
     
     # Flatpak applications
-    [[ -d "/var/lib/flatpak/exports/bin" ]] && export PATH="/var/lib/flatpak/exports/bin:$PATH"
-    [[ -d "$HOME/.local/share/flatpak/exports/bin" ]] && export PATH="$HOME/.local/share/flatpak/exports/bin:$PATH"
+    add_to_path "/var/lib/flatpak/exports/bin"
+    add_to_path "$HOME/.local/share/flatpak/exports/bin"
     
     # AppImage directory (common location for portable Linux apps)
-    [[ -d "$HOME/Applications" ]] && export PATH="$HOME/Applications:$PATH"
+    add_to_path "$HOME/Applications"
 fi
 
-# Clean up PATH (remove duplicates while preserving order)
+# Clean up PATH (remove duplicates, skip non-existent dirs, preserve order)
 clean_path() {
-    if [ -n "$PATH" ]; then
-        old_PATH=$PATH:
-        PATH=
-        while [ -n "$old_PATH" ]; do
-            x=${old_PATH%%:*}
-            case $PATH: in
-                *:"$x":*) ;;
-                *) PATH=$PATH:$x;;
-            esac
-            old_PATH=${old_PATH#*:}
+    local IFS=':'
+    local -a entries skip_patterns
+    local new_path=""
+
+    # Drop known-bad, transient, or legacy paths even if they exist
+    skip_patterns=(
+        "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        "/opt/pmk/env/global/bin"
+    )
+
+    read -r -A entries <<< "$PATH"
+
+    for x in "${entries[@]}"; do
+        # Skip empty or non-directory entries
+        [[ -z "$x" || ! -d "$x" ]] && continue
+
+        # Skip explicitly blacklisted paths
+        for bad in "${skip_patterns[@]}"; do
+            [[ "$x" == "$bad" ]] && continue 2
         done
-        PATH=${PATH#:}
-        export PATH
-    fi
+
+        case ":$new_path:" in
+            *:"$x":*) ;; # already present
+            *) new_path+="${new_path:+:}$x" ;;
+        esac
+    done
+
+    PATH="$new_path"
+    export PATH
 }
 
 # Clean PATH on load
