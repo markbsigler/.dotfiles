@@ -273,7 +273,7 @@ fi
 if command -v gh &> /dev/null; then
     # Only setup copilot aliases if the extension is installed
     if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
-        eval "$(gh copilot alias -- zsh)"
+        eval "$(gh copilot alias -- zsh 2>/dev/null)" 2>/dev/null || true
     fi
 fi
 

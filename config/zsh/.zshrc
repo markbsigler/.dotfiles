@@ -25,8 +25,11 @@ setopt HIST_BEEP                 # Beep when accessing non-existent history
 
 # Zsh options
 setopt AUTO_CD              # cd by typing directory name if it's not a command
-setopt CORRECT              # spell correction for commands
-setopt CORRECT_ALL          # spell correction for all arguments
+# Disable spell correction in VS Code, enable elsewhere
+if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -z "$VSCODE_SIMPLE_PROMPT" ]]; then
+    setopt CORRECT              # spell correction for commands
+    setopt CORRECT_ALL          # spell correction for all arguments
+fi
 setopt AUTO_LIST            # automatically list choices on ambiguous completion
 setopt AUTO_MENU            # automatically use menu completion
 setopt ALWAYS_TO_END        # move cursor to end if word had one match

@@ -9,6 +9,30 @@ case $- in
     *) return 0 ;;
 esac
 
+# VS Code-specific terminal configuration - apply simple prompt and exit early
+if [[ -n "$VSCODE_SIMPLE_PROMPT" ]] || [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    # Enable VS Code shell integration
+    [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
+    
+    # Simple prompt without emojis
+    export PS1='%n@%m %1~ %# '
+    export RPROMPT=''
+    
+    # Disable autocorrect in VS Code
+    unsetopt CORRECT
+    unsetopt CORRECT_ALL
+    
+    # Remove deactivate alias that breaks Python venv
+    unalias deactivate 2>/dev/null
+    
+    # Disable Oh My Zsh customization in VS Code
+    unset ZSH_THEME
+    export DISABLE_AUTO_UPDATE="true"
+    
+    # Exit early to skip fancy prompt setup
+    return 0
+fi
+
 # CRITICAL: Ensure prompt expansion is enabled (Terminal.app compatibility)
 setopt PROMPT_SUBST
 setopt PROMPT_PERCENT
