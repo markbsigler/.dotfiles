@@ -11,9 +11,6 @@ esac
 
 # VS Code-specific terminal configuration - apply simple prompt and exit early
 if [[ -n "$VSCODE_SIMPLE_PROMPT" ]] || [[ "$TERM_PROGRAM" == "vscode" ]]; then
-    # Enable VS Code shell integration
-    [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
-    
     # Simple prompt without emojis
     export PS1='%n@%m %1~ %# '
     export RPROMPT=''

@@ -2,6 +2,9 @@
 
 # FZF key bindings and fuzzy completion
 if command -v fzf &> /dev/null; then
+    # Set up fzf key bindings and fuzzy completion
+    source <(fzf --zsh)
+
     # Custom functions using FZF
     
     # Interactive git branch switching

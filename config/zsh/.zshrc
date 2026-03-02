@@ -50,6 +50,7 @@ setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 # Use an explicit list to avoid relying on brace expansion being enabled
 configs=(
     "$ZDOTDIR/os-detection.zsh"
+    "$ZDOTDIR/vscode.zsh"
     "$ZDOTDIR/secrets.zsh"
     "$ZDOTDIR/exports.zsh"
     "$ZDOTDIR/package-manager.zsh"
