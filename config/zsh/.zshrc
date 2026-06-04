@@ -141,3 +141,14 @@ clean_path_once() {
 clean_path_once
 typeset -ga precmd_functions
 precmd_functions+=clean_path_once
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/msigler/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+# opencode
+export PATH=/Users/msigler/.opencode/bin:$PATH
+
+# Added by git-ai installer on Sat May  9 13:46:35 EDT 2026
+export PATH="/Users/msigler/.git-ai/bin:$PATH"

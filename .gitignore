@@ -78,6 +78,12 @@ PERSONAL.md
 *.key
 *.crt
 *.p12
+*.pfx
+
+# Secrets and credentials
+*secret*
+*.env
+credentials
 
 # Package manager files
 node_modules/

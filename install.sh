@@ -355,6 +355,23 @@ link_configs() {
     if [[ -d "$DOTFILES_DIR/config/nvim" ]]; then
         create_symlink "$DOTFILES_DIR/config/nvim" "$HOME/.config/nvim"
     fi
+
+    # MCPM configuration (tokenless template managed by dotfiles)
+    if [[ -f "$DOTFILES_DIR/config/mcpm/servers.json" ]]; then
+        create_symlink "$DOTFILES_DIR/config/mcpm/servers.json" "$HOME/.config/mcpm/servers.json"
+    fi
+
+    # Secure Atlassian MCP launcher
+    if [[ -f "$DOTFILES_DIR/scripts/mcpm-atlassian-secure.sh" ]]; then
+        create_symlink "$DOTFILES_DIR/scripts/mcpm-atlassian-secure.sh" "$HOME/.local/bin/mcpm-atlassian-secure"
+    fi
+    
+    # Enforce secure permissions on MCPM auxiliary files (MCPM resets to 644)
+    if [[ -d "$HOME/.config/mcpm" ]]; then
+        for file in servers_cache.json monitor.db; do
+            [[ -f "$HOME/.config/mcpm/$file" ]] && chmod 600 "$HOME/.config/mcpm/$file" 2>/dev/null
+        done
+    fi
     
     # Create local config files if they don't exist
     local local_files=(
@@ -456,6 +473,8 @@ validate_installation() {
     [[ -f "$DOTFILES_DIR/config/git/gitconfig" ]] && links+=("$HOME/.gitconfig:$DOTFILES_DIR/config/git/gitconfig")
     [[ -f "$DOTFILES_DIR/config/vim/vimrc" ]] && links+=("$HOME/.vimrc:$DOTFILES_DIR/config/vim/vimrc")
     [[ -d "$DOTFILES_DIR/config/nvim" ]] && links+=("$HOME/.config/nvim:$DOTFILES_DIR/config/nvim")
+    [[ -f "$DOTFILES_DIR/config/mcpm/servers.json" ]] && links+=("$HOME/.config/mcpm/servers.json:$DOTFILES_DIR/config/mcpm/servers.json")
+    [[ -f "$DOTFILES_DIR/scripts/mcpm-atlassian-secure.sh" ]] && links+=("$HOME/.local/bin/mcpm-atlassian-secure:$DOTFILES_DIR/scripts/mcpm-atlassian-secure.sh")
     
     for link in "${links[@]}"; do
         local target="${link%:*}"

@@ -1,18 +1,28 @@
 # ~/.config/zsh/exports.zsh - Environment variables
 
-# Default editor - cross-platform preference
-if command -v code &> /dev/null; then
+# Default editor - MacVim first, VSCode as backup
+if command -v mvim &> /dev/null; then
+    # MacVim installed - use GUI or terminal mode
+    export EDITOR="mvim -v"  # -v for terminal mode
+    export VISUAL="mvim"      # GUI mode for VISUAL
+    export GIT_EDITOR="mvim -v"
+elif command -v code &> /dev/null; then
+    # VSCode as backup
     export EDITOR="code --wait"
     export VISUAL="code --wait"
+    export GIT_EDITOR="code --wait"
 elif command -v nvim &> /dev/null; then
     export EDITOR="nvim"
     export VISUAL="nvim"
+    export GIT_EDITOR="nvim"
 elif command -v vim &> /dev/null; then
     export EDITOR="vim"
     export VISUAL="vim"
+    export GIT_EDITOR="vim"
 else
     export EDITOR="nano"
     export VISUAL="nano"
+    export GIT_EDITOR="nano"
 fi
 
 # Note: Core PATH setup is in .zprofile (loaded for login shells)
