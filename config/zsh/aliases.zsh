@@ -162,7 +162,7 @@ if is_macos; then
     alias showfiles="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
     alias hidefiles="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
     alias flushdns="sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
-    alias brewup="brew update && brew upgrade && brew cleanup"
+    alias brewup='brew update && brew upgrade --yes --greedy && brew cleanup && brew autoremove && brew doctor'
     alias brewinfo="brew leaves | xargs brew desc --eval-all"
     alias localip="ipconfig getifaddr en0"
     alias publicip="curl -s https://ipinfo.io/ip"
@@ -290,9 +290,6 @@ if is_macos; then
 else
     alias diskusage="du -sh * | sort -hr"
 fi
-
-# Brew update
-alias brewup='brew update && brew upgrade --greedy && brew cleanup && brew autoremove && brew doctor'
 
 # Aider AI coding assistance
 alias aid="aider"
