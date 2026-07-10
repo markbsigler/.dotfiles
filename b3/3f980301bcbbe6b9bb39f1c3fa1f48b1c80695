@@ -1,0 +1,19 @@
+config/zsh/aliases.zsh
+  s_bded03b42f98f4::t_38feb364882062 12-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "b33f980301bcbbe6b9bb39f1c3fa1f48b1c80695",
+  "prompts": {},
+  "sessions": {
+    "s_bded03b42f98f4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_0b31ba06fffefJuS2bgwL4sM6P",
+        "model": "openai/gpt-oss-20b"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
