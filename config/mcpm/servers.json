@@ -2,6 +2,7 @@
   "vscode-mcp": {
     "name": "vscode-mcp",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "vscode-mcp-server"
@@ -11,6 +12,7 @@
   "fetch": {
     "name": "fetch",
     "profile_tags": [],
+    "enabled": null,
     "command": "uvx",
     "args": [
       "mcp-server-fetch"
@@ -20,6 +22,7 @@
   "filesystem": {
     "name": "filesystem",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "-y",
@@ -32,6 +35,7 @@
   "memory": {
     "name": "memory",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "-y",
@@ -42,6 +46,7 @@
   "sequential-thinking": {
     "name": "sequential-thinking",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "-y",
@@ -52,6 +57,7 @@
   "context7": {
     "name": "context7",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "-y",
@@ -62,6 +68,7 @@
   "git": {
     "name": "git",
     "profile_tags": [],
+    "enabled": null,
     "command": "uvx",
     "args": [
       "mcp-server-git",
@@ -73,6 +80,7 @@
   "atlassian": {
     "name": "atlassian",
     "profile_tags": [],
+    "enabled": null,
     "command": "/bin/zsh",
     "args": [
       "-lc",
@@ -87,6 +95,7 @@
   "apple-mcp": {
     "name": "apple-mcp",
     "profile_tags": [],
+    "enabled": null,
     "command": "npx",
     "args": [
       "@dhravya/apple-mcp@latest"
@@ -96,6 +105,7 @@
   "aha-mcp": {
     "name": "aha-mcp",
     "profile_tags": [],
+    "enabled": null,
     "command": "/bin/zsh",
     "args": [
       "-lc",
@@ -105,5 +115,15 @@
       "AHA_DOMAIN": "bmc",
       "AHA_MCP_TOKEN_SERVICE": "aha_mcp_token"
     }
+  },
+  "markitdown": {
+    "name": "markitdown",
+    "profile_tags": [],
+    "enabled": null,
+    "command": "uvx",
+    "args": [
+      "markitdown-mcp"
+    ],
+    "env": {}
   }
 }
