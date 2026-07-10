@@ -9,12 +9,12 @@ alias -- -="cd -"
 
 # List files - conditional based on available tools
 if command -v eza &> /dev/null; then
-    alias ls="eza --color=auto --icons"
-    alias l="eza -lahF --color=auto --icons"
-    alias la="eza -la --color=auto --icons"
-    alias ll="eza -l --color=auto --icons"
-    alias lsd="eza -lD --color=auto --icons"  # List only directories
-    alias laf="eza -laF --color=auto --icons"
+    alias ls="eza --color=auto --icons=always"
+    alias l="eza -lahF --color=auto --icons=always"
+    alias la="eza -la --color=auto --icons=always"
+    alias ll="eza -l --color=auto --icons=always"
+    alias lsd="eza -lD --color=auto --icons=always"  # List only directories
+    alias laf="eza -laF --color=auto --icons=always"
     alias tree="eza --tree"
 elif command -v exa &> /dev/null; then
     # Fallback to exa
