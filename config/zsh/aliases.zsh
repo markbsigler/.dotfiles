@@ -296,3 +296,11 @@ alias aid="aider"
 alias aid-proj="aider-project"
 alias aid-help="aider --help"
 alias ollama-check="curl -s http://localhost:11434/api/tags | head -20"
+
+# Atuin shell history
+if command -v atuin &> /dev/null; then
+    alias asearch="atuin search -i"        # Interactive history search
+    alias ahist="atuin history list"       # List history
+    alias astats="atuin stats --count 20"  # Most used commands
+    alias async="atuin sync"               # Sync history
+fi
