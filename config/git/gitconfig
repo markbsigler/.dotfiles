@@ -21,7 +21,7 @@
 	pager = delta --dark --side-by-side 2>/dev/null || less -R
 	# XDG-compliant config location
 	excludesfile = ~/.config/git/ignore
-	editor = mvim -v
+	editor = vim
 
 [init]
 	defaultBranch = main
