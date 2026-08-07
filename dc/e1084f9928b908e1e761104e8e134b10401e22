@@ -1,0 +1,21 @@
+config/zsh/.zshrc
+  s_583d283141983a::t_447216c9d69a33 62
+config/zsh/aliases.zsh
+  s_583d283141983a::t_aa50c2ba718b10 299-306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "dce1084f9928b908e1e761104e8e134b10401e22",
+  "prompts": {},
+  "sessions": {
+    "s_583d283141983a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_03794d60affefxt3Ueb4dieaG1",
+        "model": "deepseek-v4-flash-free"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
