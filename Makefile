@@ -235,7 +235,39 @@ doctor:
 	@if [ "$(OS)" = "linux" ]; then \
 		echo "Distribution: $(DISTRO)"; \
 	fi
-	@echo "Shell: $$SHELL"
+	@__login_shell="$$(getent passwd "$$(id -un)" 2>/dev/null | cut -d: -f7)"; \
+	if [ -z "$$__login_shell" ] && [ "$(OS)" = "darwin" ]; then \
+		__login_shell="$$(dscl . -read "/Users/$$(id -un)" UserShell 2>/dev/null | awk '{print $$2}')"; \
+	fi; \
+	if [ -z "$$__login_shell" ]; then \
+		__login_shell="$${SHELL:-}"; \
+	fi; \
+	echo "Shell: $$__login_shell"; \
+	if command -v zsh >/dev/null 2>&1; then \
+		case "$$__login_shell" in \
+			*zsh) \
+				echo "$(GREEN)✅ zsh is the default shell$(NC)" ;; \
+			"") \
+				echo "$(YELLOW)⚪ Could not detect login shell; run: chsh -s $$(command -v zsh)$(NC)" ;; \
+			*) \
+				echo "$(RED)❌ Default shell is $$__login_shell, expected zsh$(NC)"; \
+				echo "$(YELLOW)Setting zsh as the default shell...$(NC)"; \
+				__zsh_path="$$(command -v zsh)"; \
+				if [ "$(OS)" = "linux" ] && ! grep -q "^$$__zsh_path$$" /etc/shells 2>/dev/null; then \
+					if command -v sudo >/dev/null 2>&1; then \
+						echo "$$__zsh_path" | sudo tee -a /etc/shells >/dev/null || \
+							echo "$(RED)❌ Could not add zsh to /etc/shells; run: echo $$__zsh_path | sudo tee -a /etc/shells$(NC)"; \
+					fi; \
+				fi; \
+				if chsh -s "$$__zsh_path" 2>/dev/null; then \
+					echo "$(GREEN)✅ zsh set as default shell (restart terminal to apply)$(NC)"; \
+				else \
+					echo "$(RED)❌ Could not change shell automatically; run: chsh -s $$__zsh_path$(NC)"; \
+				fi ;; \
+		esac; \
+	else \
+		echo "$(YELLOW)⚪ zsh is not installed$(NC)"; \
+	fi
 	@echo "Package Manager: $(PACKAGE_MANAGER)"
 	@echo ""
 	@echo "$(YELLOW)Required Tools:$(NC)"
