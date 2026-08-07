@@ -59,6 +59,7 @@ configs=(
     "$ZDOTDIR/completions.zsh"
     "$ZDOTDIR/vi-mode.zsh"
     "$ZDOTDIR/history.zsh"
+    "$ZDOTDIR/atuin.zsh"
     "$ZDOTDIR/python.zsh"
     "$ZDOTDIR/version-managers.zsh"
     "$ZDOTDIR/plugins.zsh"
