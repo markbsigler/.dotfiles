@@ -1,7 +1,9 @@
 {
   "vscode-mcp": {
     "name": "vscode-mcp",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -11,7 +13,9 @@
   },
   "fetch": {
     "name": "fetch",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "uvx",
     "args": [
@@ -21,7 +25,9 @@
   },
   "filesystem": {
     "name": "filesystem",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -34,7 +40,9 @@
   },
   "memory": {
     "name": "memory",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -45,7 +53,9 @@
   },
   "sequential-thinking": {
     "name": "sequential-thinking",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -56,7 +66,9 @@
   },
   "context7": {
     "name": "context7",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -67,7 +79,9 @@
   },
   "git": {
     "name": "git",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "uvx",
     "args": [
@@ -79,7 +93,9 @@
   },
   "atlassian": {
     "name": "atlassian",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "/bin/zsh",
     "args": [
@@ -94,7 +110,9 @@
   },
   "apple-mcp": {
     "name": "apple-mcp",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "npx",
     "args": [
@@ -104,7 +122,9 @@
   },
   "aha-mcp": {
     "name": "aha-mcp",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "/bin/zsh",
     "args": [
@@ -118,7 +138,9 @@
   },
   "markitdown": {
     "name": "markitdown",
-    "profile_tags": [],
+    "profile_tags": [
+      "default"
+    ],
     "enabled": null,
     "command": "uvx",
     "args": [
