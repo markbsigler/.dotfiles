@@ -25,8 +25,11 @@ setopt HIST_BEEP                 # Beep when accessing non-existent history
 
 # Zsh options
 setopt AUTO_CD              # cd by typing directory name if it's not a command
-setopt CORRECT              # spell correction for commands
-setopt CORRECT_ALL          # spell correction for all arguments
+# Disable spell correction in VS Code, enable elsewhere
+if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -z "$VSCODE_SIMPLE_PROMPT" ]]; then
+    setopt CORRECT              # spell correction for commands
+    setopt CORRECT_ALL          # spell correction for all arguments
+fi
 setopt AUTO_LIST            # automatically list choices on ambiguous completion
 setopt AUTO_MENU            # automatically use menu completion
 setopt ALWAYS_TO_END        # move cursor to end if word had one match
@@ -47,6 +50,7 @@ setopt HIST_FIND_NO_DUPS    # Don't display duplicates during search
 # Use an explicit list to avoid relying on brace expansion being enabled
 configs=(
     "$ZDOTDIR/os-detection.zsh"
+    "$ZDOTDIR/vscode.zsh"
     "$ZDOTDIR/secrets.zsh"
     "$ZDOTDIR/exports.zsh"
     "$ZDOTDIR/package-manager.zsh"
@@ -137,3 +141,14 @@ clean_path_once() {
 clean_path_once
 typeset -ga precmd_functions
 precmd_functions+=clean_path_once
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/msigler/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+# opencode
+export PATH=/Users/msigler/.opencode/bin:$PATH
+
+# Added by git-ai installer on Sat May  9 13:46:35 EDT 2026
+export PATH="/Users/msigler/.git-ai/bin:$PATH"

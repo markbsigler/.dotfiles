@@ -1,7 +1,7 @@
 # .dotfiles Makefile
 # Provides convenient commands for managing .dotfiles installation and maintenance
 
-.PHONY: help install update clean backup test lint docs doctor fonts plugins status deps restore list
+.PHONY: help install update clean backup test lint docs doctor fonts plugins status deps restore list mcp-atlassian-setup mcp-atlassian-migrate mcp-atlassian-test
 
 # Default target
 .DEFAULT_GOAL := help
@@ -72,6 +72,9 @@ help:
 	@echo "  make doctor         Check system health and dependencies"
 	@echo "  make plugins        Update ZSH plugins"
 	@echo "  make fonts          Install Agave Nerd Font"
+	@echo "  make mcp-atlassian-setup   Seed Atlassian tokens into macOS Keychain"
+	@echo "  make mcp-atlassian-migrate Update MCPM Atlassian config to secure launcher"
+	@echo "  make mcp-atlassian-test    Run Atlassian MCP server"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
 	@echo "  make status         Show .dotfiles status"
@@ -180,6 +183,18 @@ lint:
 security:
 	@echo "$(GREEN)Running security audit...$(NC)"
 	@./scripts/security-audit.sh
+
+## Seed Atlassian MCP tokens into macOS Keychain
+mcp-atlassian-setup:
+	@./scripts/mcpm-atlassian-keychain-setup.sh
+
+## Migrate Atlassian MCP server config to secure launcher
+mcp-atlassian-migrate:
+	@./scripts/mcpm-atlassian-migrate.sh
+
+## Run Atlassian MCP server for smoke testing
+mcp-atlassian-test:
+	@mcpm run atlassian
 
 ## Clean up backup directories and logs
 clean:

@@ -11,6 +11,7 @@ Comprehensive guide for managing API keys, tokens, and credentials in your dotfi
 - [Method 3: 1Password CLI](#method-3-1password-cli)
 - [Method 4: macOS Keychain](#method-4-macos-keychain)
 - [Method 5: Linux Secret Service](#method-5-linux-secret-service)
+- [MCPM Atlassian (Keychain)](#mcpm-atlassian-keychain)
 - [Best Practices](#best-practices)
 - [Migration Guide](#migration-guide)
 
@@ -362,6 +363,47 @@ if [[ "$OSTYPE" == linux* ]] && command -v secret-tool &> /dev/null; then
     secret_from_keyring GITHUB_TOKEN github_token
     secret_from_keyring OPENAI_API_KEY openai_api_key
 fi
+```
+
+## MCPM Atlassian (Keychain)
+
+Use this pattern when running Atlassian MCP via MCPM so tokens are not stored in `~/.config/mcpm/servers.json`.
+
+### Goals
+
+- Keep Jira tokens in macOS Keychain (Confluence is optional)
+- Keep MCPM server config tokenless
+- Align with dotfiles-managed config and scripts
+
+### One-time setup
+
+```bash
+# 1) Seed Jira token into Keychain (interactive, silent input)
+~/.dotfiles/scripts/mcpm-atlassian-keychain-setup.sh
+
+# 2) Migrate existing MCPM atlassian config to secure launcher
+~/.dotfiles/scripts/mcpm-atlassian-migrate.sh
+
+# 3) Smoke test
+mcpm run atlassian
+```
+
+**Note:** Confluence support is optional. If you only use Jira, omit `CONFLUENCE_URL` from the MCPM config. The secure launcher will skip Confluence authentication if not configured.
+
+### Managed files
+
+- Launcher script: `~/.local/bin/mcpm-atlassian-secure`
+- Dotfiles source launcher: `~/.dotfiles/scripts/mcpm-atlassian-secure.sh`
+- Dotfiles-managed MCPM config template: `~/.dotfiles/config/mcpm/servers.json`
+
+### Security checks
+
+```bash
+# Verify no token literals remain in MCPM config
+rg -n "jira-token=|confluence-token=" ~/.config/mcpm/servers.json
+
+# Optional broader scan
+rg -n "jira-token=|confluence-token=" ~/.config/mcpm ~/.dotfiles
 ```
 
 ## Best Practices

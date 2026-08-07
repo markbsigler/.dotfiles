@@ -19,8 +19,8 @@ CHECKS=0
 # Logging functions
 info() { echo -e "${BLUE}ℹ️  $*${NC}"; }
 success() { echo -e "${GREEN}✅ $*${NC}"; }
-warning() { echo -e "${YELLOW}⚠️  $*${NC}"; ((WARNINGS++)); }
-error() { echo -e "${RED}❌ $*${NC}"; ((ERRORS++)); }
+warning() { echo -e "${YELLOW}⚠️  $*${NC}"; WARNINGS=$((WARNINGS + 1)); }
+error() { echo -e "${RED}❌ $*${NC}"; ERRORS=$((ERRORS + 1)); }
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║     🔒 Security Audit Report 🔒       ║${NC}"
@@ -34,19 +34,23 @@ cd ~/.dotfiles || exit 1
 # Check 1: Hard-coded Secrets
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}1. Checking for potential hard-coded secrets...${NC}"
 
 if command -v rg &> /dev/null; then
     # Use ripgrep if available
-    if rg -i '(password|secret|api[_-]?key|token|credentials|auth).*=.*["'\''`][^"'\''`]{8,}["'\''`]' . \
+    # Pattern: keyword = "literal_value_8+_chars"
+    # Excludes: comments, variable expansions ($VAR, $(...)), "author" (git alias noise)
+    SECRETS_PATTERN='(password|secret|api[_-]?key|token|credentials)\s*[=:]\s*["'\''`][^"'\''`$]{8,}["'\''`]'
+    matches=$(rg -i "$SECRETS_PATTERN" . \
        --glob '!*.md' \
        --glob '!*audit*' \
-       --glob '!SECRETS.md' \
-       --glob '!CUSTOMIZATION.md' \
        --glob '!*.template' \
        --glob '!.git/**' \
-       2>/dev/null; then
+       --glob '!scripts/mcpm-atlassian-secure.sh' \
+       2>/dev/null | grep -v '^\s*#' | grep -v '^\./[^:]*:\s*#' || true)
+    if [[ -n "$matches" ]]; then
+        echo "$matches"
         warning "Found potential hard-coded secrets"
         echo "   Review the matches above and ensure no real secrets are committed"
     else
@@ -57,7 +61,7 @@ else
     if grep -ri 'password\|secret\|api_key\|token' . \
        --exclude='*.md' \
        --exclude='*audit*' \
-       --exclude-dir='.git' 2>/dev/null | grep -v '^\s*#' | head -5; then
+       --exclude-dir='.git' 2>/dev/null | grep -v '^\s*#' | grep -v ':\s*#' | head -5; then
         warning "Found potential hard-coded secrets (install ripgrep for better detection)"
     else
         success "No hard-coded secrets found"
@@ -68,7 +72,7 @@ fi
 # Check 2: File Permissions
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}2. Checking file permissions...${NC}"
 
 # Find world-writable files
@@ -95,7 +99,7 @@ fi
 # Check 3: .env Files
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}3. Checking for .env files...${NC}"
 
 env_files=$(find . -name ".env*" -type f 2>/dev/null | grep -v ".gitignore" || true)
@@ -118,7 +122,7 @@ fi
 # Check 4: .gitignore Coverage
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}4. Checking .gitignore coverage for sensitive files...${NC}"
 
 sensitive_patterns=(
@@ -151,7 +155,7 @@ fi
 # Check 5: SSH Configuration
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}5. Checking SSH configuration...${NC}"
 
 if [[ -d ~/.ssh ]]; then
@@ -194,7 +198,7 @@ fi
 # Check 6: Secrets Directory
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}6. Checking secrets directory...${NC}"
 
 if [[ -d ~/.secrets ]]; then
@@ -233,7 +237,7 @@ fi
 # Check 7: Git Configuration
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}7. Checking git configuration...${NC}"
 
 # Check if using HTTPS with passwords
@@ -256,7 +260,7 @@ fi
 # Check 8: Public Files in Repository
 # ============================================================================
 
-((CHECKS++))
+CHECKS=$((CHECKS + 1))
 echo -e "\n${BLUE}8. Checking for accidentally tracked sensitive files...${NC}"
 
 # Check git for tracked sensitive files

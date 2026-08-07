@@ -8,7 +8,9 @@
 	# signingkey = YOUR_GPG_KEY_ID
 
 [core]
-	editor = vim
+	# Editor: prefers vim/macvim, falls back to what's in $GIT_EDITOR or $EDITOR
+	# Leave commented to use environment variable, or uncomment to force vim
+	# editor = vim
 	# Handle line endings cross-platform
 	autocrlf = input
 	# Don't convert LF to CRLF on checkout (safe for Unix/macOS/WSL)
@@ -19,6 +21,7 @@
 	pager = delta --dark --side-by-side 2>/dev/null || less -R
 	# XDG-compliant config location
 	excludesfile = ~/.config/git/ignore
+	editor = mvim -v
 
 [init]
 	defaultBranch = main
@@ -141,3 +144,9 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[trace2]
+	eventTarget = af_unix:stream:/Users/msigler/.git-ai/internal/daemon/trace2.sock
+	eventNesting = 0

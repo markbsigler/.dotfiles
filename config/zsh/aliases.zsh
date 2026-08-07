@@ -9,12 +9,12 @@ alias -- -="cd -"
 
 # List files - conditional based on available tools
 if command -v eza &> /dev/null; then
-    alias ls="eza --color=auto --icons"
-    alias l="eza -lahF --color=auto --icons"
-    alias la="eza -la --color=auto --icons"
-    alias ll="eza -l --color=auto --icons"
-    alias lsd="eza -lD --color=auto --icons"  # List only directories
-    alias laf="eza -laF --color=auto --icons"
+    alias ls="eza --color=auto --icons=always"
+    alias l="eza -lahF --color=auto --icons=always"
+    alias la="eza -la --color=auto --icons=always"
+    alias ll="eza -l --color=auto --icons=always"
+    alias lsd="eza -lD --color=auto --icons=always"  # List only directories
+    alias laf="eza -laF --color=auto --icons=always"
     alias tree="eza --tree"
 elif command -v exa &> /dev/null; then
     # Fallback to exa
@@ -162,7 +162,7 @@ if is_macos; then
     alias showfiles="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
     alias hidefiles="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
     alias flushdns="sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
-    alias brewup="brew update && brew upgrade && brew cleanup"
+    alias brewup='brew update && brew upgrade --yes --greedy && brew cleanup && brew autoremove && brew doctor'
     alias brewinfo="brew leaves | xargs brew desc --eval-all"
     alias localip="ipconfig getifaddr en0"
     alias publicip="curl -s https://ipinfo.io/ip"
@@ -273,7 +273,7 @@ fi
 if command -v gh &> /dev/null; then
     # Only setup copilot aliases if the extension is installed
     if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
-        eval "$(gh copilot alias -- zsh)"
+        eval "$(gh copilot alias -- zsh 2>/dev/null)" 2>/dev/null || true
     fi
 fi
 
@@ -290,9 +290,6 @@ if is_macos; then
 else
     alias diskusage="du -sh * | sort -hr"
 fi
-
-# Brew update
-alias brewup='brew update && brew upgrade --greedy && brew cleanup && brew autoremove && brew doctor'
 
 # Aider AI coding assistance
 alias aid="aider"
