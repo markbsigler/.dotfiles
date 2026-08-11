@@ -11,18 +11,6 @@
     ],
     "env": {}
   },
-  "fetch": {
-    "name": "fetch",
-    "profile_tags": [
-      "default"
-    ],
-    "enabled": null,
-    "command": "uvx",
-    "args": [
-      "mcp-server-fetch"
-    ],
-    "env": {}
-  },
   "filesystem": {
     "name": "filesystem",
     "profile_tags": [
@@ -33,7 +21,6 @@
     "args": [
       "-y",
       "@modelcontextprotocol/server-filesystem",
-      "/Users/msigler",
       "/Users/msigler"
     ],
     "env": {}
@@ -145,6 +132,20 @@
     "command": "uvx",
     "args": [
       "markitdown-mcp"
+    ],
+    "env": {}
+  },
+  "fetch": {
+    "name": "fetch",
+    "profile_tags": [
+      "default"
+    ],
+    "enabled": null,
+    "command": "uvx",
+    "args": [
+      "--with",
+      "mcp<2.0.0",
+      "mcp-server-fetch"
     ],
     "env": {}
   }
