@@ -1,0 +1,19 @@
+AGENTS.md
+  s_9d3d9ec606ce8b::t_41415a7f5e30be 3,5,7-13,15,18-27,29,31,33,35-39,41,43,45,47-50,52,54-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "df8de04eeadf86cdc6310caeee73f16a71c2bcb5",
+  "prompts": {},
+  "sessions": {
+    "s_9d3d9ec606ce8b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00d51320bffe6Ef9ZdgdeZyFTo",
+        "model": "deepseek-v4-flash-free"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
