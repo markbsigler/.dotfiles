@@ -1,0 +1,14 @@
+config/mcpm/servers.json
+  h_85ea3c1869612c 137-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2cb36ea42414474b7da13b0460c3ead7832eeb18",
+  "prompts": {},
+  "humans": {
+    "h_85ea3c1869612c": {
+      "author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
