@@ -199,7 +199,7 @@ install_packages_macos() {
         "go"
         "rust"
         "ruby"
-        "openjdk"
+        "temurin17"
     )
     
     # Optional packages
@@ -277,7 +277,7 @@ install_packages_ubuntu() {
         "npm"
         "ruby"
         "ruby-dev"
-        "openjdk-11-jdk"
+        "openjdk-17-jdk"
         "golang-go"
         "shellcheck"
     )
@@ -449,7 +449,7 @@ install_packages_fedora() {
         "npm"
         "ruby"
         "ruby-devel"
-        "java-11-openjdk-devel"
+        "java-17-openjdk-devel"
         "golang"
         "tree"
         "htop"
@@ -491,7 +491,7 @@ install_packages_arch() {
         "nodejs"
         "npm"
         "ruby"
-        "jdk11-openjdk"
+        "jdk17-openjdk"
         "go"
         "tree"
         "htop"
