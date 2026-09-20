@@ -270,14 +270,14 @@ update_zsh_plugins() {
             if [[ "$DRY_RUN" == false ]]; then
                 if (cd "$plugin" && git pull --quiet); then
                     success "$plugin_name updated"
-                    ((updated++))
+                    updated=$((updated + 1))
                 else
                     error "$plugin_name failed to update"
-                    ((failed++))
+                    failed=$((failed + 1))
                 fi
             else
                 info "DRY RUN: Would update $plugin_name"
-                ((updated++))
+                updated=$((updated + 1))
             fi
         fi
     done
@@ -287,6 +287,7 @@ update_zsh_plugins() {
     fi
     if [[ $failed -gt 0 ]]; then
         warning "$failed ZSH plugin(s) failed to update"
+        return 1
     fi
     echo
 }

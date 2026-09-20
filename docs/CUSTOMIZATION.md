@@ -15,23 +15,28 @@ This guide explains how to customize your dotfiles for personal or machine-speci
 
 ## Local Configuration
 
-The dotfiles system provides two locations for machine-specific customization that won't be tracked in git:
+Use one ignored file for machine-specific shell configuration.
 
-### 1. User Local Config (Recommended)
+### Private Local Config
 
-**Location:** `~/.config/zsh/local.zsh`
+**Location:** `~/.dotfiles/local/local.zsh`
 
-This file is automatically created by the installer and sourced last, giving it the highest priority.
+Full installation creates this file; startup sources it once after the shared
+configuration. For a checkout elsewhere, use its `local/local.zsh`. The tracked
+`config/zsh/local.zsh` placeholder is no longer sourced. Review and move old
+personal settings manually, without putting secrets into tracked files.
 
 ```bash
-# Example: ~/.config/zsh/local.zsh
+# Example: ~/.dotfiles/local/local.zsh
 
 # Work-specific configurations
 export WORK_EMAIL="you@company.com"
 alias work-ssh="ssh user@work-server"
 
-# API keys and tokens (or use secrets.zsh)
-export GITHUB_TOKEN="your-token-here"
+# Explicit credential loading when needed
+github_credentials() {
+    secret_from_keychain GITHUB_TOKEN github_token
+}
 
 # Machine-specific PATH modifications
 export PATH="/custom/path:$PATH"
@@ -40,18 +45,19 @@ export PATH="/custom/path:$PATH"
 alias vpn="sudo openvpn --config ~/vpn/config.ovpn"
 ```
 
-### 2. Repository Local Config
+### Private Git Config
 
-**Location:** `~/.dotfiles/local/local.zsh`
+**Location:** `~/.gitconfig.local`
 
-This is for testing changes before adding them to the main config.
+The shared Git config includes this optional file for machine-specific credential
+helpers or tracing settings. It is separate from shell configuration.
 
 ## Adding Custom Aliases
 
 ### Method 1: Use local.zsh (Recommended for personal aliases)
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 alias update="~/scripts/update.sh"
 alias notes="vim ~/Documents/notes.md"
 ```
@@ -92,7 +98,7 @@ alias backup="~/.dotfiles/scripts/backup-dotfiles.sh"
 ### Method 1: Use local.zsh
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 
 # Quick project initializer
 myproject() {
@@ -158,12 +164,14 @@ See [SECRETS.md](./SECRETS.md) for detailed information.
 ### Quick Start
 
 ```bash
-# Method 1: Plain file (simple)
-secret_add GITHUB_TOKEN "ghp_xxxxxxxxxxxx"
+# Method 1: Plaintext JSON; jq required, enter value at prompt
+secret_add GITHUB_TOKEN
 secret_list
+secret_load GITHUB_TOKEN
+unset GITHUB_TOKEN
 
 # Method 2: macOS Keychain
-keychain_add github_token "ghp_xxxxxxxxxxxx"
+keychain_add github_token
 secret_from_keychain GITHUB_TOKEN github_token
 
 # Method 3: 1Password CLI
@@ -214,7 +222,7 @@ git clone https://github.com/user/plugin-name \
 
 2. **Load it in your config:**
 
-Add to `~/.config/zsh/local.zsh`:
+Add to `~/.dotfiles/local/local.zsh`:
 
 ```bash
 # Load custom plugin
@@ -249,7 +257,7 @@ Plug 'user/plugin-name'
 
 ### Simple Prompt Changes
 
-Add to `~/.config/zsh/local.zsh`:
+Add to `~/.dotfiles/local/local.zsh`:
 
 ```bash
 # Minimal prompt
@@ -287,9 +295,9 @@ fi
 
 ✅ **Do:**
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 alias myserver="ssh user@myserver.com"
-export MY_API_KEY="secret"
+export WORK_PROJECT_DIR="$HOME/work/projects"
 ```
 
 ❌ **Don't:**
@@ -303,19 +311,19 @@ alias myserver="ssh user@myserver.com"
 ✅ **Do:**
 ```bash
 # Use secret_add or keychain
-secret_add API_KEY "secret-value"
+secret_add API_KEY
 ```
 
 ❌ **Don't:**
 ```bash
 # Hard-code in tracked files
-export API_KEY="secret-value"
+export API_KEY="your-api-key"
 ```
 
 ### 3. Document Your Changes
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 
 # ==========================================================
 # Work Configuration
@@ -333,7 +341,7 @@ alias backup-photos="rsync -av ~/Pictures /backup/photos"
 
 ```bash
 # Test in local.zsh first
-source ~/.config/zsh/local.zsh
+source ~/.dotfiles/local/local.zsh
 
 # If it works, move to main config and commit
 git add config/zsh/aliases.zsh
@@ -378,7 +386,7 @@ alias dev-node="cd ~/dev/node-project && nvm use"
 
 ```bash
 # Test configuration syntax
-zsh -n ~/.config/zsh/local.zsh
+zsh -n ~/.dotfiles/local/local.zsh
 
 # Reload configuration
 source ~/.zshrc
@@ -411,7 +419,7 @@ make doctor
 ### Work Profile
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 
 # Work environment setup
 work_setup() {
@@ -436,7 +444,7 @@ fi
 ### Project Shortcuts
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 
 # Quick project access
 alias p1="cd ~/Projects/project1"
@@ -452,7 +460,7 @@ p1_deploy() {
 ### Development Environment
 
 ```bash
-# ~/.config/zsh/local.zsh
+# ~/.dotfiles/local/local.zsh
 
 # Python development
 alias venv="python3 -m venv venv && source venv/bin/activate"

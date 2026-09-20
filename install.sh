@@ -8,13 +8,12 @@ set -euo pipefail
 
 
 # Configuration
-readonly DOTFILES_DIR="$HOME/.dotfiles"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly DOTFILES_DIR
 BACKUP_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-readonly BACKUP_DIR="$HOME/.dotfiles-backup-$BACKUP_TIMESTAMP"
+readonly BACKUP_DIR="$HOME/.dotfiles-backup-$BACKUP_TIMESTAMP-$$"
 readonly LOG_FILE="$DOTFILES_DIR/install.log"
-
-# Ensure dotfiles directory exists for logging
-mkdir -p "$DOTFILES_DIR"
+source "$DOTFILES_DIR/scripts/lib/backup.sh"
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -29,6 +28,7 @@ FORCE=false
 VERBOSE=false
 UPDATE_MODE=false
 SKIP_PACKAGES=false
+RUN_TESTS=false
 
 # OS Detection
 detect_os() {
@@ -67,7 +67,9 @@ print_color() {
 
 # Logging functions
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" | tee -a "$LOG_FILE"
+    if [[ "$DRY_RUN" == false && "${LOG_READY:-false}" == true ]]; then
+        printf '%s - %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_FILE"
+    fi
 }
 
 info() {
@@ -148,8 +150,12 @@ parse_args() {
                 UPDATE_MODE=true
                 shift
                 ;;
-            --skip-packages)
+            -s|--skip-packages)
                 SKIP_PACKAGES=true
+                shift
+                ;;
+            -t|--test)
+                RUN_TESTS=true
                 shift
                 ;;
             *)
@@ -169,21 +175,14 @@ command_exists() {
 # Create backup of existing file/directory
 backup_file() {
     local file="$1"
-    
-    if [[ -e "$file" ]] && [[ ! "$FORCE" == true ]]; then
-        if [[ ! -d "$BACKUP_DIR" ]]; then
-            mkdir -p "$BACKUP_DIR"
-            info "Created backup directory: $BACKUP_DIR"
+    if [[ ( -e "$file" || -L "$file" ) && "$FORCE" == false ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            info "Would back up: $file"
+            return 0
         fi
-        
-        local backup_path
-        backup_path="$BACKUP_DIR/$(basename "$file")"
-        if [[ "$DRY_RUN" == false ]]; then
-            cp -r "$file" "$backup_path"
-            success "Backed up $file to $backup_path"
-        else
-            info "Would backup: $file → $backup_path"
-        fi
+        if [[ ! -d "$BACKUP_DIR" ]]; then backup_init "$BACKUP_DIR"; fi
+        backup_save "$BACKUP_DIR" "${file#"$HOME/"}"
+        printf '%s\n' complete > "$BACKUP_DIR/COMPLETE"
     fi
 }
 
@@ -191,73 +190,38 @@ backup_file() {
 create_symlink() {
     local source="$1"
     local target="$2"
-    local target_dir
+    local target_dir staging
     target_dir="$(dirname "$target")"
-    
-    # Create target directory if it doesn't exist
-    if [[ ! -d "$target_dir" ]]; then
-        if [[ "$DRY_RUN" == false ]]; then
-            mkdir -p "$target_dir"
-            info "Created directory: $target_dir"
-        else
-            info "Would create directory: $target_dir"
-        fi
+    backup_safe_parent "${target#"$HOME/"}"
+    if [[ -L "$target" && "$(readlink "$target")" == "$source" ]]; then
+        return 0
     fi
-    
-    # In update mode, if target doesn't exist, create it
-    # If target exists but is not a symlink, we'll handle it below
-    
-    # In update mode, if target exists but points to wrong location, update it
-    if [[ "$UPDATE_MODE" == true ]] && [[ -L "$target" ]]; then
-        local current_target
-        current_target="$(readlink "$target")"
-        if [[ "$current_target" == "$source" ]]; then
-            # Already correct, no need to update
-            return 0
-        fi
-        # Continue to update the symlink below
+    if [[ "$UPDATE_MODE" == true && ! -L "$target" ]]; then
+        return 0
     fi
-    
-    # Backup existing file (only if not in update mode or if not already a correct symlink)
-    backup_file "$target"
-    
-    # Remove existing file/symlink
-    if [[ -e "$target" ]] || [[ -L "$target" ]]; then
-        if [[ "$DRY_RUN" == false ]]; then
-            rm -rf "$target"
-        else
-            info "Would remove: $target"
-        fi
-    fi
-    
-    # Create symlink with error checking and retry
-    if [[ "$DRY_RUN" == false ]]; then
-        local attempt=1
-        local max_attempts=3
-        local success_flag=false
-        while [[ $attempt -le $max_attempts ]]; do
-            ln -sf "$source" "$target" 2>symlink_error.log
-            if [[ $? -eq 0 && -L "$target" ]]; then
-                success "Linked: $source → $target"
-                success_flag=true
-                break
-            else
-                error "Failed to link: $source → $target (attempt $attempt)"
-                if [[ -s symlink_error.log ]]; then
-                    error "ln error: $(cat symlink_error.log)"
-                fi
-                rm -rf "$target"
-                sleep 1
-            fi
-            attempt=$((attempt+1))
-        done
-        rm -f symlink_error.log
-        if [[ "$success_flag" == false ]]; then
-            error "Giving up after $max_attempts attempts: $source → $target"
-        fi
-    else
+    if [[ "$DRY_RUN" == true ]]; then
         info "Would link: $source → $target"
+        return 0
     fi
+    backup_file "$target"
+    mkdir -p "$target_dir"
+    staging="$(mktemp -d "$target_dir/.dotfiles-link.XXXXXX")"
+    if ! ln -s "$source" "$staging/replacement"; then
+        rmdir "$staging"
+        return 1
+    fi
+    if [[ -e "$target" || -L "$target" ]]; then
+        mv "$target" "$staging/previous" || { rm -rf "$staging"; return 1; }
+    fi
+    if ! mv "$staging/replacement" "$target"; then
+        if [[ -e "$staging/previous" || -L "$staging/previous" ]]; then
+            mv "$staging/previous" "$target" || { error "Recovery retained at $staging"; return 1; }
+        fi
+        rm -rf "$staging"
+        return 1
+    fi
+    rm -rf "$staging"
+    success "Linked: $source → $target"
 }
 
 # Install packages based on detected OS
@@ -317,14 +281,6 @@ link_configs() {
 
     # ZSH configuration
     if [[ -d "$DOTFILES_DIR/config/zsh" ]]; then
-        # Backup before removal if target exists and is not a symlink
-        if [[ -e "$HOME/.config/zsh" && ! -L "$HOME/.config/zsh" ]]; then
-            backup_file "$HOME/.config/zsh"
-        fi
-        # Remove any existing file/dir/symlink
-        if [[ -e "$HOME/.config/zsh" || -L "$HOME/.config/zsh" ]]; then
-            rm -rf "$HOME/.config/zsh"
-        fi
         create_symlink "$DOTFILES_DIR/config/zsh" "$HOME/.config/zsh"
     fi
 
@@ -344,6 +300,9 @@ link_configs() {
     # Git configuration
     if [[ -f "$DOTFILES_DIR/config/git/gitconfig" ]]; then
         create_symlink "$DOTFILES_DIR/config/git/gitconfig" "$HOME/.gitconfig"
+    fi
+    if [[ -d "$DOTFILES_DIR/config/git" ]]; then
+        create_symlink "$DOTFILES_DIR/config/git" "$HOME/.config/git"
     fi
     
     # Vim configuration
@@ -367,15 +326,17 @@ link_configs() {
     fi
     
     # Enforce secure permissions on MCPM auxiliary files (MCPM resets to 644)
-    if [[ -d "$HOME/.config/mcpm" ]]; then
+    if [[ "$UPDATE_MODE" == false && "$DRY_RUN" == false && -d "$HOME/.config/mcpm" ]]; then
         for file in servers_cache.json monitor.db; do
-            [[ -f "$HOME/.config/mcpm/$file" ]] && chmod 600 "$HOME/.config/mcpm/$file" 2>/dev/null
+            if [[ -f "$HOME/.config/mcpm/$file" && ! -L "$HOME/.config/mcpm/$file" ]]; then
+                chmod 600 "$HOME/.config/mcpm/$file"
+            fi
         done
     fi
     
     # Create local config files if they don't exist
+    [[ "$UPDATE_MODE" == false ]] || return 0
     local local_files=(
-        "$DOTFILES_DIR/config/zsh/local.zsh"
         "$DOTFILES_DIR/local/local.zsh"
     )
     
@@ -467,6 +428,9 @@ validate_installation() {
     local links=(
         "$HOME/.config/zsh:$DOTFILES_DIR/config/zsh"
         "$HOME/.zshrc:$DOTFILES_DIR/config/zsh/.zshrc"
+        "$HOME/.zshenv:$DOTFILES_DIR/config/zsh/.zshenv"
+        "$HOME/.zprofile:$DOTFILES_DIR/config/zsh/.zprofile"
+        "$HOME/.config/git:$DOTFILES_DIR/config/git"
     )
     
     # Add optional links if they exist
@@ -480,14 +444,13 @@ validate_installation() {
         local target="${link%:*}"
         local source="${link#*:}"
         
-        # In update mode, validate all expected symlinks (create missing ones)
-        # This allows update mode to create missing symlinks
+        if [[ "$UPDATE_MODE" == true && ! -L "$target" ]]; then continue; fi
         
         if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$source" ]]; then
             success "✓ $target → $source"
         else
             error "✗ Failed to create symlink: $target → $source"
-            ((errors++))
+            errors=$((errors + 1))
         fi
     done
     
@@ -504,7 +467,7 @@ validate_installation() {
             if [[ -n "$zsh_error_output" ]]; then
                 error "ZSH error output: $zsh_error_output"
             fi
-            ((errors++))
+            errors=$((errors + 1))
         fi
     fi
     
@@ -556,7 +519,10 @@ EOF
     fi
     
     # Initialize log
-    echo "Installation started at $(date)" > "$LOG_FILE"
+    if [[ "$DRY_RUN" == false && "$UPDATE_MODE" == false ]]; then
+        printf 'Installation started at %s\n' "$(date)" > "$LOG_FILE"
+        LOG_READY=true
+    fi
     
     # Detect and display system info
     local os
@@ -573,10 +539,10 @@ EOF
     fi
     
     # Create necessary directories
-    create_directories
+    if [[ "$UPDATE_MODE" == false ]]; then create_directories; fi
     
     # Install packages (if not skipped)
-    if [[ "$SKIP_PACKAGES" == false ]]; then
+    if [[ "$SKIP_PACKAGES" == false && "$UPDATE_MODE" == false ]]; then
         install_packages
     fi
     
@@ -584,17 +550,16 @@ EOF
     link_configs
     
     # Install plugins
-    install_vim_plugins
-    
-    # Set up shell
-    setup_zsh
-    
-    # Update machine info
-    update_machine_info
+    if [[ "$UPDATE_MODE" == false ]]; then
+        install_vim_plugins
+        setup_zsh
+        update_machine_info
+    fi
     
     # Validate installation
     if [[ "$DRY_RUN" == false ]]; then
         validate_installation
+        if [[ "$RUN_TESTS" == true ]]; then bash "$DOTFILES_DIR/scripts/test-dotfiles.sh"; fi
     fi
     
     # Final message
@@ -612,7 +577,7 @@ EOF
         echo "  1. Restart your terminal or run: source ~/.zshrc"
         echo "  2. Check the setup with: make doctor"
         echo "  3. Update plugins with: make plugins"
-        echo "  4. Customize local settings in: ~/.config/zsh/local.zsh"
+        echo "  4. Customize local settings in: $DOTFILES_DIR/local/local.zsh"
     else
         info "Dry run completed. Use '$0' to perform actual installation."
     fi

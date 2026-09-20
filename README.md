@@ -14,21 +14,30 @@ A cross-platform, batteries-included dotfiles setup for macOS and Linux. It feat
 
 ```bash
 git clone https://github.com/markbsigler/.dotfiles ~/.dotfiles
-cd ~/.dotfiles && make install
+cd ~/.dotfiles
+make install-dry
 ```
 
 Forking for personal use is recommended. With GitHub CLI:
 
 ```bash
 gh repo fork markbsigler/.dotfiles --clone --default-branch-only ~/.dotfiles
-cd ~/.dotfiles && make install
-```
-
-Preview changes:
-
-```bash
+cd ~/.dotfiles
 make install-dry
 ```
+
+After reviewing the preview, run the full installation explicitly:
+
+```bash
+make install
+```
+
+Full installation creates links and private local settings, installs packages and
+plugins, and may change the login shell. `bash install.sh --skip-packages` skips
+packages only, not all other side effects. `make update` relinks existing symlinks
+only: it does not provision missing Git support links or install anything.
+Edits to already-linked configuration affect subsequent shells and tool launches
+without reinstalling. Shell startup does not download missing Zsh plugins.
 
 ## 📋 System Support
 
@@ -43,6 +52,11 @@ Use a Nerd Font for icons. Default: Agave Nerd Font.
 - `make fonts` on macOS/Linux
 - Then set your terminal font to “Agave Nerd Font”
 - On Windows/WSL, install manually from the Nerd Fonts site
+
+The legacy font download fallback uses fixed `/tmp` paths and lacks artifact
+checksum verification. Package/bootstrap helpers also perform live downloads and
+host changes. These paths have not received the recovery suite's safety guarantees;
+review them separately before running them on a sensitive or shared machine.
 
 ## 🛠️ What Gets Installed
 
@@ -138,17 +152,36 @@ make packages       # Install packages only
 make doctor         # Health check and diagnostics
 make test           # Run comprehensive test suite ✅
 make lint           # Lint shell scripts with shellcheck ✅
-make security       # Run security audit (checks for secrets, permissions) 🔒
+make security       # Redacted working-tree secret scan
 make plugins        # Update Zsh plugins
 make fonts          # Install Agave Nerd Font
 ```
 
 **Quality Assurance:**
-- ✅ All shell scripts pass shellcheck (0 issues)
-- ✅ Comprehensive test suite for ZSH, Vim, and shell scripts
-- ✅ Cross-platform tested on macOS and Linux
-- ✅ Pre-commit hooks available for automated quality checks
-- 🔒 Security audit script for checking secrets and permissions
+
+- `make test` and `make test-all` use the same failure-propagating runner.
+- Tests require Bash, Zsh, Vim, Git, jq, ripgrep and ShellCheck. Missing tools fail.
+- Recovery and security regressions use temporary homes and dummy credentials.
+- ShellCheck excludes Zsh; Zsh syntax is validated separately.
+- CI defines macOS Bash 3.2/5 and Linux Bash 5 jobs. Local macOS checks do not
+  establish Linux or authenticated MCP compatibility.
+- The secret scanner does not inspect Git history, ignored untracked files or
+  live permissions; see [docs/SECRETS.md](docs/SECRETS.md) for its limits.
+
+### Backup And Restore
+
+```bash
+bash scripts/backup-dotfiles.sh --dry-run
+make backup
+make restore BACKUP=/absolute/path/to/completed-backup
+make restore BACKUP=/absolute/path/to/completed-backup CONFIRM=yes
+```
+
+Restore previews by default and requires an explicit completed backup. Confirmed
+restore saves displaced files before replacement. Backups retain home-relative
+paths, hidden files and symlinks. They do not dereference links, capture the
+checkout contents, or include credentials. Keep a separate repository backup.
+`make clean` lists log candidates; it does not delete backups or logs.
 
 ## 🔍 Environment Detection
 
@@ -160,11 +193,12 @@ Key variables: `DOTFILES_OS`, `DOTFILES_ARCH`, `DOTFILES_DISTRO`.
 
 ## 🔒 Secrets Management
 
-Secure secrets management with 5 different methods to fit your security needs:
+Prefer a credential provider. The JSON store is plaintext with restricted file
+permissions, not encrypted storage. No method automatically exports all secrets.
 
 | Method | Security | Ease | Platform | Best For |
 |--------|----------|------|----------|----------|
-| Plain File | ⭐ | ⭐⭐⭐⭐⭐ | All | Development |
+| Plaintext JSON (jq required) | ⭐ | ⭐⭐⭐⭐ | macOS/Linux | Local development |
 | Password Store (pass) | ⭐⭐⭐⭐ | ⭐⭐⭐ | macOS/Linux | Power Users |
 | 1Password CLI | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | All | Enterprise |
 | macOS Keychain | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | macOS | Mac Users |
@@ -172,9 +206,11 @@ Secure secrets management with 5 different methods to fit your security needs:
 
 **Quick Start:**
 ```bash
-secret_add GITHUB_TOKEN "ghp_xxxx"  # Simple method
-secret_list                          # List all secrets
-secret_help                          # Show all methods
+secret_add GITHUB_TOKEN  # Enter value at the protected prompt
+secret_list             # List names only
+secret_load GITHUB_TOKEN # Explicitly export for a command
+unset GITHUB_TOKEN      # Remove the export afterward
+secret_help             # Show all methods
 ```
 
 **Advanced:**
@@ -183,7 +219,7 @@ secret_help                          # Show all methods
 secret_from_1password GITHUB_TOKEN "op://Personal/GitHub/token"
 
 # macOS Keychain
-keychain_add github_token "ghp_xxxx"
+keychain_add github_token # The OS utility prompts for the value
 secret_from_keychain GITHUB_TOKEN github_token
 
 # Password Store (pass)
@@ -205,9 +241,15 @@ Managed via `~/.zshenv` (loaded first for all shell invocations) and `~/.zprofil
 
 ## 🎯 Customization
 
-- `~/.config/zsh/local.zsh` for machine-specific settings
-- `local/local.zsh` for repo-local overrides
+- `local/local.zsh` in this checkout for ignored machine-specific settings,
+  sourced once after shared configuration
+- `~/.gitconfig.local` for private Git overrides, including optional credential
+  manager or tracing settings
 - Add functions to `config/zsh/functions.zsh`
+
+The tracked `config/zsh/local.zsh` placeholder is no longer sourced. Move any
+personal settings from that old location manually after reviewing them. Do not
+store token literals in either file; use explicit credential-loading functions.
 
 Example:
 
@@ -221,7 +263,7 @@ alias work-ssh="ssh user@work-server"
 ```bash
 make test     # Run comprehensive test suite
 make doctor   # System health check
-make lint     # ShellCheck linting (all scripts pass ✅)
+make lint     # ShellCheck for supported shell scripts
 ```
 
 **Test Coverage:**
@@ -229,6 +271,10 @@ make lint     # ShellCheck linting (all scripts pass ✅)
 - Shell script validation
 - Integration tests
 - Vim configuration
+
+`make perf` reports that an isolated benchmark is not yet available. The optional
+profiling scripts below start real shells and can execute private startup code;
+they are not part of the offline test suite.
 
 ## 🚨 Troubleshooting
 
@@ -264,7 +310,7 @@ Complete documentation for customization, troubleshooting, and advanced features
 - **[config/zsh/README.md](config/zsh/README.md)** - Zsh-specific documentation
 
 **Quick Links:**
-- Customize: `~/.config/zsh/local.zsh` for machine-specific settings
+- Customize: `~/.dotfiles/local/local.zsh` for machine-specific settings
 - Functions: See `config/zsh/functions.zsh` for all available functions
 - Secrets: Run `secret_help` for secrets management options
 - Security: Run `make security` or `./scripts/security-audit.sh`

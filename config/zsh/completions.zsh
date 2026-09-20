@@ -38,9 +38,6 @@ fi
 # Completion System Initialization
 # ============================================================================
 
-# Skip insecure directory warnings (common with Homebrew on macOS)
-export ZSH_DISABLE_COMPFIX=true
-
 # Load completion system
 autoload -Uz compinit
 
@@ -49,22 +46,7 @@ autoload -Uz compinit
 export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompdump"
 mkdir -p "$XDG_CACHE_HOME/zsh" 2>/dev/null
 
-# Smart compinit: only rebuild once per day (performance optimization)
-if [[ "$OSTYPE" == darwin* ]]; then
-    # macOS stat
-    if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(date +'%j') == $(stat -f '%Sm' -t '%j' "$ZSH_COMPDUMP" 2>/dev/null) ]]; then
-        compinit -C -d "$ZSH_COMPDUMP"
-    else
-        compinit -d "$ZSH_COMPDUMP"
-    fi
-else
-    # Linux stat
-    if [[ -f "$ZSH_COMPDUMP" ]] && [[ $(date +'%j') == $(stat -c '%Y' "$ZSH_COMPDUMP" 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0) ]]; then
-        compinit -C -d "$ZSH_COMPDUMP"
-    else
-        compinit -d "$ZSH_COMPDUMP"
-    fi
-fi
+compinit -i -d "$ZSH_COMPDUMP"
 
 # Set up completion menu navigation
 zstyle ':completion:*' menu select

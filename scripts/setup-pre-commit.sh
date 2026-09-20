@@ -26,7 +26,7 @@ if ! command -v pre-commit &> /dev/null; then
 fi
 
 # Navigate to dotfiles directory
-cd ~/.dotfiles || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 # Install pre-commit hooks
 echo "Installing pre-commit hooks..."
@@ -34,7 +34,7 @@ pre-commit install
 
 # Run once to download and cache hook environments
 echo "Running initial pre-commit check..."
-pre-commit run --all-files || true
+pre-commit run --all-files
 
 echo -e "${GREEN}✅ Pre-commit hooks installed successfully!${NC}"
 echo ""

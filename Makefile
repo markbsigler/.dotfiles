@@ -2,6 +2,7 @@
 # Provides convenient commands for managing .dotfiles installation and maintenance
 
 .PHONY: help install update clean backup test lint docs doctor fonts plugins status deps restore list mcp-atlassian-setup mcp-atlassian-migrate mcp-atlassian-test
+.PHONY: install-dry force packages test-all test-quick test-integration test-zsh test-vim test-scripts security perf dev-setup git-hooks
 
 # Default target
 .DEFAULT_GOAL := help
@@ -15,7 +16,7 @@ CYAN := \033[0;36m
 NC := \033[0m
 
 # Configuration
-DOTFILES_DIR := $(HOME)/.dotfiles
+DOTFILES_DIR := $(CURDIR)
 BACKUP_DIR := $(HOME)/.dotfiles-backup-$(shell date +%Y%m%d-%H%M%S)
 
 # OS Detection
@@ -62,13 +63,13 @@ help:
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make test           Test configuration files"
 	@echo "  make lint           Lint shell scripts"
-	@echo "  make clean          Clean up backup directories and logs"
+	@echo "  make clean          List log cleanup candidates without deleting"
 	@echo "  make dev-setup      Install development tools"
 	@echo "  make git-hooks      Setup git pre-commit hooks"
 	@echo ""
 	@echo "$(GREEN)Maintenance:$(NC)"
 	@echo "  make backup         Create backup of current configs"
-	@echo "  make restore        Restore from most recent backup"
+	@echo "  make restore BACKUP=/path [CONFIRM=yes]  Preview or restore an explicit backup"
 	@echo "  make doctor         Check system health and dependencies"
 	@echo "  make plugins        Update ZSH plugins"
 	@echo "  make fonts          Install Agave Nerd Font"
@@ -110,79 +111,38 @@ packages:
 	@./scripts/install-packages.sh
 
 ## Test configuration files
-test: test-zsh test-vim test-scripts test-integration
+test:
+	@bash scripts/test-dotfiles.sh
 
 ## Run comprehensive tests
 test-all:
-	@./scripts/test-dotfiles.sh
+	@bash scripts/test-dotfiles.sh
 
 ## Run quick tests only
 test-quick:
-	@./scripts/test-dotfiles.sh --quick
+	@bash scripts/test-dotfiles.sh --quick
 
 test-integration:
 	@echo "$(GREEN)Running integration tests...$(NC)"
-	@./scripts/test-dotfiles.sh --integration
+	@bash scripts/test-dotfiles.sh --integration
 
 test-zsh:
-	@echo "$(GREEN)Testing ZSH configuration...$(NC)"
-	@if [ -f config/zsh/os-detection.zsh ]; then \
-		zsh -n config/zsh/os-detection.zsh && echo "✅ ZSH OS detection syntax OK" || echo "❌ ZSH OS detection syntax error"; \
-	fi
-	@if [ -f config/zsh/aliases.zsh ]; then \
-		zsh -n config/zsh/aliases.zsh && echo "✅ ZSH aliases syntax OK" || echo "❌ ZSH aliases syntax error"; \
-	fi
-	@if [ -f config/zsh/functions.zsh ]; then \
-		zsh -n config/zsh/functions.zsh && echo "✅ ZSH functions syntax OK" || echo "❌ ZSH functions syntax error"; \
-	fi
-	@if [ -f config/zsh/exports.zsh ]; then \
-		zsh -n config/zsh/exports.zsh && echo "✅ ZSH exports syntax OK" || echo "❌ ZSH exports syntax error"; \
-	fi
-	@if [ -f config/zsh/prompt.zsh ]; then \
-		zsh -n config/zsh/prompt.zsh && echo "✅ ZSH prompt syntax OK" || echo "❌ ZSH prompt syntax error"; \
-	fi
-	@if [ -f config/zsh/plugins.zsh ]; then \
-		zsh -n config/zsh/plugins.zsh && echo "✅ ZSH plugins syntax OK" || echo "❌ ZSH plugins syntax error"; \
-	fi
+	@bash scripts/test-dotfiles.sh --zsh
 
 test-vim:
-	@echo "$(GREEN)Testing Vim configuration...$(NC)"
-	@if [ -f config/vim/vimrc ]; then \
-		vim -e -T dumb --cmd 'try | source config/vim/vimrc | catch | cquit | endtry' +qall && \
-		echo "✅ Vim config OK" || echo "❌ Vim config error"; \
-	fi
+	@bash scripts/test-dotfiles.sh --vim
 
 test-scripts:
-	@echo "$(GREEN)Testing shell scripts...$(NC)"
-	@for script in install.sh scripts/*.sh; do \
-		if [ -f "$$script" ]; then \
-			bash -n "$$script" && echo "✅ $$script syntax OK" || echo "❌ $$script syntax error"; \
-		fi; \
-	done
+	@bash scripts/test-dotfiles.sh --scripts
 
 ## Lint shell scripts
 lint:
-	@echo "$(GREEN)Linting shell scripts...$(NC)"
-	@if command -v shellcheck >/dev/null 2>&1; then \
-		find . -name "*.sh" -exec shellcheck {} + && echo "✅ Shellcheck passed"; \
-	else \
-		echo "$(YELLOW)Warning: shellcheck not installed$(NC)"; \
-		echo "Install with:"; \
-		if [ "$(OS)" = "darwin" ]; then \
-			echo "  brew install shellcheck"; \
-		elif [ "$(DISTRO)" = "ubuntu" ]; then \
-			echo "  sudo apt install shellcheck"; \
-		elif [ "$(DISTRO)" = "fedora" ]; then \
-			echo "  sudo dnf install shellcheck"; \
-		elif [ "$(DISTRO)" = "arch" ]; then \
-			echo "  sudo pacman -S shellcheck"; \
-		fi; \
-	fi
+	@bash scripts/test-dotfiles.sh --lint
 
 ## Run security audit
 security:
 	@echo "$(GREEN)Running security audit...$(NC)"
-	@./scripts/security-audit.sh
+	@bash scripts/security-audit.sh
 
 ## Seed Atlassian MCP tokens into macOS Keychain
 mcp-atlassian-setup:
@@ -198,32 +158,17 @@ mcp-atlassian-test:
 
 ## Clean up backup directories and logs
 clean:
-	@echo "$(GREEN)Cleaning up...$(NC)"
-	@find $(HOME) -name ".dotfiles-backup-*" -type d -mtime +30 -print0 2>/dev/null | xargs -0 rm -rf
-	@rm -f install.log logs/*.log
-	@echo "✅ Cleaned old backups and logs"
+	@echo "Backups are retained. Review and remove individual backups explicitly."
+	@echo "Repository log candidates (no deletion performed):"
+	@find . -maxdepth 2 -type f -name '*.log' -print
 
 ## Create backup of current configs
 backup:
-	@echo "$(GREEN)Creating backup...$(NC)"
-	@mkdir -p $(BACKUP_DIR)
-	@if [ -f $(HOME)/.zshrc ]; then cp $(HOME)/.zshrc $(BACKUP_DIR)/; fi
-	@if [ -f $(HOME)/.gitconfig ]; then cp $(HOME)/.gitconfig $(BACKUP_DIR)/; fi
-	@if [ -f $(HOME)/.vimrc ]; then cp $(HOME)/.vimrc $(BACKUP_DIR)/; fi
-	@if [ -d $(HOME)/.config/zsh ]; then cp -r $(HOME)/.config/zsh $(BACKUP_DIR)/; fi
-	@echo "✅ Backup created at $(BACKUP_DIR)"
+	@bash scripts/backup-dotfiles.sh
 
 ## Restore from most recent backup
 restore:
-	@echo "$(GREEN)Restoring from backup...$(NC)"
-	@LATEST_BACKUP=$$(ls -dt $(HOME)/.dotfiles-backup-* 2>/dev/null | head -n1); \
-	if [ -n "$$LATEST_BACKUP" ]; then \
-		echo "Restoring from $$LATEST_BACKUP"; \
-		cp -r $$LATEST_BACKUP/* $(HOME)/; \
-		echo "✅ Restored from backup"; \
-	else \
-		echo "❌ No backup found"; \
-	fi
+	@bash scripts/restore-dotfiles.sh --backup "$(BACKUP)" $(if $(filter yes,$(CONFIRM)),--yes,--dry-run)
 
 ## Check system health and dependencies
 doctor:
@@ -251,19 +196,7 @@ doctor:
 				echo "$(YELLOW)⚪ Could not detect login shell; run: chsh -s $$(command -v zsh)$(NC)" ;; \
 			*) \
 				echo "$(RED)❌ Default shell is $$__login_shell, expected zsh$(NC)"; \
-				echo "$(YELLOW)Setting zsh as the default shell...$(NC)"; \
-				__zsh_path="$$(command -v zsh)"; \
-				if [ "$(OS)" = "linux" ] && ! grep -q "^$$__zsh_path$$" /etc/shells 2>/dev/null; then \
-					if command -v sudo >/dev/null 2>&1; then \
-						echo "$$__zsh_path" | sudo tee -a /etc/shells >/dev/null || \
-							echo "$(RED)❌ Could not add zsh to /etc/shells; run: echo $$__zsh_path | sudo tee -a /etc/shells$(NC)"; \
-					fi; \
-				fi; \
-				if chsh -s "$$__zsh_path" 2>/dev/null; then \
-					echo "$(GREEN)✅ zsh set as default shell (restart terminal to apply)$(NC)"; \
-				else \
-					echo "$(RED)❌ Could not change shell automatically; run: chsh -s $$__zsh_path$(NC)"; \
-				fi ;; \
+				echo "To change it explicitly, run: chsh -s $$(command -v zsh)" ;; \
 		esac; \
 	else \
 		echo "$(YELLOW)⚪ zsh is not installed$(NC)"; \
@@ -314,7 +247,12 @@ status:
 	@for link in \
 		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
 		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
+		"$(HOME)/.zshenv:$(DOTFILES_DIR)/config/zsh/.zshenv" \
+		"$(HOME)/.zprofile:$(DOTFILES_DIR)/config/zsh/.zprofile" \
 		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
+		"$(HOME)/.config/git:$(DOTFILES_DIR)/config/git" \
+		"$(HOME)/.config/mcpm/servers.json:$(DOTFILES_DIR)/config/mcpm/servers.json" \
+		"$(HOME)/.local/bin/mcpm-atlassian-secure:$(DOTFILES_DIR)/scripts/mcpm-atlassian-secure.sh" \
 		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
 		"$(HOME)/.config/nvim:$(DOTFILES_DIR)/config/nvim" \
 	; do \
@@ -391,15 +329,22 @@ fonts:
 plugins:
 	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
 	@if [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
-		for plugin in $(HOME)/.local/share/zsh/plugins/*; do \
+		failed=0; \
+		for plugin in "$(HOME)/.local/share/zsh/plugins"/*; do \
 			if [ -d "$$plugin/.git" ]; then \
 				plugin_name=$$(basename "$$plugin"); \
 				echo "Updating $$plugin_name..."; \
-				(cd "$$plugin" && git pull --quiet) && echo "✅ $$plugin_name updated" || echo "❌ $$plugin_name failed"; \
+				if (cd "$$plugin" && git pull --quiet); then \
+					echo "✅ $$plugin_name updated"; \
+				else \
+					echo "❌ $$plugin_name failed"; failed=1; \
+				fi; \
 			fi; \
 		done; \
+		exit $$failed; \
 	else \
 		echo "❌ No plugins directory found. Run 'make install' first."; \
+		exit 1; \
 	fi
 
 ## Show dependencies
@@ -487,23 +432,11 @@ dev-setup:
 
 ## Setup git hooks
 git-hooks:
-	@echo "$(GREEN)Setting up git hooks...$(NC)"
-	@if [ -d .git ]; then \
-		echo '#!/bin/bash' > .git/hooks/pre-commit; \
-		echo 'make test' >> .git/hooks/pre-commit; \
-		chmod +x .git/hooks/pre-commit; \
-		echo "✅ Pre-commit hook installed"; \
-	else \
-		echo "❌ Not a git repository"; \
-	fi
+	@bash scripts/setup-pre-commit.sh
 
 ## Performance test
 perf:
-	@echo "$(GREEN)Running performance tests...$(NC)"
-	@echo "ZSH startup time (5 runs):"
-	@for i in 1 2 3 4 5; do \
-		(time zsh -i -c exit) 2>&1 | grep real; \
-	done
+	@bash scripts/test-dotfiles.sh --performance
 
 ## Show make targets (alternative help)  
 list:

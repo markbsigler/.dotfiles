@@ -14,21 +14,11 @@ export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 
 # Set ZDOTDIR to keep zsh config organized in XDG location
 # This tells zsh where to find .zshrc, .zprofile, etc.
-export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 
 # Clear guard flags inherited from parent shells so startup files still run
 unset ZPROFILE_LOADED
 unset ZSHRC_LOADED
 
-# Ensure critical directories exist (cross-platform)
-# Create directories silently without error if they already exist
-mkdir -p "$XDG_DATA_HOME/zsh" \
-         "$XDG_CACHE_HOME/zsh" \
-         "$XDG_STATE_HOME" \
-         "$ZDOTDIR" 2>/dev/null || true
-
 # Set up history location (XDG compliant)
 export HISTFILE="$XDG_DATA_HOME/zsh/history"
-
-# Ensure history directory exists
-mkdir -p "$(dirname "$HISTFILE")" 2>/dev/null || true

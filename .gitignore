@@ -9,6 +9,7 @@ install.log
 local/local.zsh
 local/local.exports
 config/zsh/local.zsh
+config/mcpm/servers.local.json
 
 # Machine info (auto-generated)
 local/machine.info
@@ -81,14 +82,11 @@ PERSONAL.md
 *.pfx
 
 # Secrets and credentials
-*secret*
 *.env
 credentials
 
 # Package manager files
 node_modules/
-package-lock.json
-yarn.lock
 
 # Python
 __pycache__/
@@ -103,11 +101,9 @@ __pycache__/
 vendor/
 
 # Go
-go.sum
 
 # Rust
 target/
-Cargo.lock
 
 # Local development database
 *.db

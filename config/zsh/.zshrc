@@ -5,8 +5,8 @@
 [[ -n "$ZSHRC_LOADED" ]] && return
 ZSHRC_LOADED=1
 
-# Skip insecure directory warnings (common with mixed ownership)
-export ZSH_DISABLE_COMPFIX=true
+umask 077
+mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
 
 # History configuration
 # HISTFILE is set in .zshenv for early availability
@@ -66,7 +66,6 @@ configs=(
     "$ZDOTDIR/fzf.zsh"
     "$ZDOTDIR/dev-tools.zsh"
     "$ZDOTDIR/ssh-config.zsh"
-    "$ZDOTDIR/local.zsh"
 )
 
 for config in "${configs[@]}"; do
@@ -76,40 +75,8 @@ done
 # Package manager setup is handled in .zprofile for login shells
 # This ensures PATH is set correctly before any other initialization
 
-# Initialize completions (after all config loaded)
-autoload -Uz compinit
-
-# Cross-platform completion loading (more efficient)
-if command -v stat >/dev/null 2>&1; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS stat
-        typeset -i updated_at=$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null || echo 0)
-    else
-        # GNU stat (Linux)
-        if stat --version >/dev/null 2>&1; then
-            # GNU stat
-            typeset -i updated_at=$(stat -c '%Y' ~/.zcompdump 2>/dev/null | xargs -I{} date -d @{} +'%j' 2>/dev/null || echo 0)
-        else
-            # BSD stat (some Linux distributions)
-            typeset -i updated_at=$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null || echo 0)
-        fi
-    fi
-    
-    if [[ ${updated_at} -lt $(date +'%j') ]]; then
-        compinit
-    else
-        compinit -C
-    fi
-else
-    # Fallback: always rebuild (safer but slower)
-    compinit
-fi
-
-# Load version managers last (lazy loading)
-[[ -f "$ZDOTDIR/version-managers.zsh" ]] && source "$ZDOTDIR/version-managers.zsh"
-
 # Load local configurations (machine-specific)
-[[ -f "$ZDOTDIR/local.zsh" ]] && source "$ZDOTDIR/local.zsh"
+[[ -f "${ZDOTDIR:A:h:h}/local/local.zsh" ]] && source "${ZDOTDIR:A:h:h}/local/local.zsh"
 
 # Load prompt last to ensure it doesn't get overridden
 [[ -f "$ZDOTDIR/prompt.zsh" ]] && source "$ZDOTDIR/prompt.zsh"
@@ -123,14 +90,6 @@ fi
 # if [[ -n "${ZSH_PROF:-}" ]]; then
 #     zprof
 # fi
-export TMPDIR=$HOME/tmp
-
-export NVM_DIR="$HOME/.config/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
 # Added by Antigravity
 add_to_path "/Users/msigler/.antigravity/antigravity/bin"
 
@@ -153,3 +112,6 @@ export PATH=/Users/msigler/.opencode/bin:$PATH
 
 # Added by git-ai installer on Sat May  9 13:46:35 EDT 2026
 export PATH="/Users/msigler/.git-ai/bin:$PATH"
+
+# Hermes Agent — ensure ~/.local/bin is on PATH
+export PATH="$HOME/.local/bin:$PATH"

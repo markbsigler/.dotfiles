@@ -1,27 +1,14 @@
 {
-  "vscode-mcp": {
-    "name": "vscode-mcp",
-    "profile_tags": [
-      "default"
-    ],
-    "enabled": null,
-    "command": "npx",
-    "args": [
-      "vscode-mcp-server"
-    ],
-    "env": {}
-  },
   "filesystem": {
     "name": "filesystem",
     "profile_tags": [
       "default"
     ],
     "enabled": null,
-    "command": "npx",
+    "command": "/bin/sh",
     "args": [
-      "-y",
-      "@modelcontextprotocol/server-filesystem",
-      "/Users/msigler"
+      "-c",
+      "exec npx -y @modelcontextprotocol/server-filesystem@2026.8.31 \"$HOME/Code\""
     ],
     "env": {}
   },
@@ -34,7 +21,7 @@
     "command": "npx",
     "args": [
       "-y",
-      "@modelcontextprotocol/server-memory"
+      "@modelcontextprotocol/server-memory@2026.8.31"
     ],
     "env": {}
   },
@@ -47,7 +34,7 @@
     "command": "npx",
     "args": [
       "-y",
-      "@modelcontextprotocol/server-sequential-thinking"
+      "@modelcontextprotocol/server-sequential-thinking@2026.8.31"
     ],
     "env": {}
   },
@@ -60,7 +47,7 @@
     "command": "npx",
     "args": [
       "-y",
-      "@upstash/context7-mcp@latest"
+      "@upstash/context7-mcp@4.1.1"
     ],
     "env": {}
   },
@@ -72,9 +59,9 @@
     "enabled": null,
     "command": "uvx",
     "args": [
-      "mcp-server-git",
-      "--repository",
-      ""
+      "--with",
+      "mcp==1.30.0",
+      "mcp-server-git==2026.8.18"
     ],
     "env": {}
   },
@@ -86,13 +73,14 @@
     "enabled": null,
     "command": "/bin/zsh",
     "args": [
-      "-lc",
-      "$HOME/.local/bin/mcpm-atlassian-secure"
+      "-fc",
+      "exec \"$HOME/.local/bin/mcpm-atlassian-secure\""
     ],
     "env": {
       "JIRA_URL": "https://jira.zeng.bmc.com",
       "ATL_MCP_JIRA_TOKEN_SERVICE": "atl_mcp_jira_token",
-      "TOOLSETS": "all"
+      "READ_ONLY_MODE": "true",
+      "ENABLED_TOOLS": "jira_search,jira_get_issue"
     }
   },
   "apple-mcp": {
@@ -103,7 +91,7 @@
     "enabled": null,
     "command": "npx",
     "args": [
-      "@dhravya/apple-mcp@latest"
+      "@dhravya/apple-mcp@0.2.7"
     ],
     "env": {}
   },
@@ -113,15 +101,13 @@
       "default"
     ],
     "enabled": null,
-    "command": "/bin/zsh",
+    "command": "npx",
     "args": [
-      "-lc",
-      "$HOME/.local/bin/mcpm-aha-secure"
+      "-y",
+      "mcp-remote@0.14.2",
+      "https://bmc.aha.io/api/v1/mcp"
     ],
-    "env": {
-      "AHA_DOMAIN": "bmc",
-      "AHA_MCP_TOKEN_SERVICE": "aha_mcp_token"
-    }
+    "env": {}
   },
   "markitdown": {
     "name": "markitdown",
@@ -131,7 +117,7 @@
     "enabled": null,
     "command": "uvx",
     "args": [
-      "markitdown-mcp"
+      "markitdown-mcp==0.0.1a7"
     ],
     "env": {}
   },
@@ -144,8 +130,8 @@
     "command": "uvx",
     "args": [
       "--with",
-      "mcp<2.0.0",
-      "mcp-server-fetch"
+      "mcp==1.30.0",
+      "mcp-server-fetch==2026.8.18"
     ],
     "env": {}
   }
