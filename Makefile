@@ -17,7 +17,6 @@ NC := \033[0m
 
 # Configuration
 DOTFILES_DIR := $(CURDIR)
-BACKUP_DIR := $(HOME)/.dotfiles-backup-$(shell date +%Y%m%d-%H%M%S)
 
 # OS Detection
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -26,18 +25,16 @@ ARCH := $(shell uname -m)
 ifeq ($(OS),darwin)
 	OS_NAME := macOS
 	PACKAGE_MANAGER := brew
-	STAT_CMD := stat -f '%Sm' -t '%j'
 else ifeq ($(OS),linux)
 	OS_NAME := Linux
-	PACKAGE_MANAGER := apt
-	STAT_CMD := stat -c '%Y' | xargs -I{} date -d @{} +'%j'
+	PACKAGE_MANAGER := unknown
 	# Detect Linux distribution
 	DISTRO := $(shell test -f /etc/os-release && grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo unknown)
-	ifeq ($(DISTRO),ubuntu)
+	ifneq ($(filter ubuntu debian,$(DISTRO)),)
 		PACKAGE_MANAGER := apt
-	else ifeq ($(DISTRO),fedora)
+	else ifneq ($(filter fedora centos rhel,$(DISTRO)),)
 		PACKAGE_MANAGER := dnf
-	else ifeq ($(DISTRO),arch)
+	else ifneq ($(filter arch manjaro,$(DISTRO)),)
 		PACKAGE_MANAGER := pacman
 	endif
 else
@@ -62,7 +59,14 @@ help:
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make test           Test configuration files"
+	@echo "  make test-all       Same complete offline suite as make test"
+	@echo "  make test-quick     Required files and shell syntax"
+	@echo "  make test-integration  Isolated recovery, security and OS checks"
+	@echo "  make test-zsh       Zsh syntax checks"
+	@echo "  make test-vim       Isolated Vim configuration check"
+	@echo "  make test-scripts   Shell script syntax checks"
 	@echo "  make lint           Lint shell scripts"
+	@echo "  make security       Redacted working-tree secret scan"
 	@echo "  make clean          List log cleanup candidates without deleting"
 	@echo "  make dev-setup      Install development tools"
 	@echo "  make git-hooks      Setup git pre-commit hooks"
@@ -78,11 +82,12 @@ help:
 	@echo "  make mcp-atlassian-test    Run Atlassian MCP server"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
+	@echo "  make help           Show this help (the default target)"
 	@echo "  make status         Show .dotfiles status"
 	@echo "  make deps           Show dependencies"
 	@echo "  make docs           Generate system info documentation"
 	@echo "  make list           Show all available targets"
-	@echo "  make perf           Run performance tests"
+	@echo "  make perf           Report unavailable isolated performance benchmark"
 
 ## Install .dotfiles (full setup)
 install:
@@ -156,7 +161,7 @@ mcp-atlassian-migrate:
 mcp-atlassian-test:
 	@mcpm run atlassian
 
-## Clean up backup directories and logs
+## List log cleanup candidates without deleting
 clean:
 	@echo "Backups are retained. Review and remove individual backups explicitly."
 	@echo "Repository log candidates (no deletion performed):"
@@ -166,7 +171,7 @@ clean:
 backup:
 	@bash scripts/backup-dotfiles.sh
 
-## Restore from most recent backup
+## Preview an explicit backup; restore only with CONFIRM=yes
 restore:
 	@bash scripts/restore-dotfiles.sh --backup "$(BACKUP)" $(if $(filter yes,$(CONFIRM)),--yes,--dry-run)
 
@@ -196,21 +201,21 @@ doctor:
 				echo "$(YELLOW)⚪ Could not detect login shell; run: chsh -s $$(command -v zsh)$(NC)" ;; \
 			*) \
 				echo "$(RED)❌ Default shell is $$__login_shell, expected zsh$(NC)"; \
-				echo "To change it explicitly, run: chsh -s $$(command -v zsh)" ;; \
+				echo "To change it explicitly, run: chsh -s $$(command -v zsh)"; exit 1 ;; \
 		esac; \
 	else \
-		echo "$(YELLOW)⚪ zsh is not installed$(NC)"; \
+		echo "$(RED)❌ zsh is not installed$(NC)"; exit 1; \
 	fi
 	@echo "Package Manager: $(PACKAGE_MANAGER)"
 	@echo ""
 	@echo "$(YELLOW)Required Tools:$(NC)"
-	@for cmd in git zsh vim curl; do \
+	@failed=0; for cmd in git zsh vim curl; do \
 		if command -v $$cmd >/dev/null 2>&1; then \
 			echo "✅ $$cmd: $$(command -v $$cmd)"; \
 		else \
-			echo "❌ $$cmd: not found"; \
+			echo "❌ $$cmd: not found"; failed=1; \
 		fi; \
-	done
+	done; exit $$failed
 	@echo ""
 	@echo "$(YELLOW)Modern CLI Tools:$(NC)"
 	@for cmd in bat eza fd fzf rg jq gh; do \
@@ -229,8 +234,8 @@ doctor:
 	@for cmd in nvm pyenv rbenv rustup; do \
 		if command -v $$cmd >/dev/null 2>&1; then \
 			echo "✅ $$cmd: $$(command -v $$cmd)"; \
-		elif [ "$$cmd" = "nvm" ] && [ -d "$$HOME/.nvm" ]; then \
-			echo "✅ nvm: $$HOME/.nvm"; \
+		elif [ "$$cmd" = "nvm" ] && [ -f "$${NVM_DIR:-$$HOME/.nvm}/nvm.sh" ]; then \
+			echo "✅ nvm: $${NVM_DIR:-$$HOME/.nvm}"; \
 		else \
 			echo "⚪ $$cmd: not installed"; \
 		fi; \
@@ -244,7 +249,7 @@ status:
 	@echo "$(GREEN).dotfiles Status:$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Symlinks:$(NC)"
-	@for link in \
+	@failed=0; for link in \
 		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
 		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
 		"$(HOME)/.zshenv:$(DOTFILES_DIR)/config/zsh/.zshenv" \
@@ -258,28 +263,31 @@ status:
 	; do \
 		target="$${link%%:*}"; \
 		source="$${link##*:}"; \
-		if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$source" ]; then \
+		if [ -L "$$target" ] && [ -e "$$target" ] && [ "$$(readlink "$$target")" = "$$source" ]; then \
 			echo "✅ $$target → $$source"; \
-		elif [ -e "$$target" ]; then \
-			echo "⚠️  $$target exists but is not linked"; \
+		elif [ -e "$$target" ] || [ -L "$$target" ]; then \
+			echo "❌ $$target is not a valid link to $$source"; failed=1; \
 		else \
-			echo "❌ $$target not found"; \
+			echo "❌ $$target not found"; failed=1; \
 		fi; \
-	done
+	done; exit $$failed
 	@echo ""
 	@echo "$(YELLOW)Git Repository:$(NC)"
-	@if [ -d .git ]; then \
-		echo "Branch: $$(git branch --show-current 2>/dev/null || echo 'detached HEAD')"; \
-		if git remote | grep -q origin 2>/dev/null; then \
-			echo "Remote: $$(git remote get-url origin)"; \
+	@set -eu; \
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		branch=$$(git branch --show-current); \
+		echo "Branch: $${branch:-detached HEAD}"; \
+		if remote=$$(git remote get-url origin 2>/dev/null); then \
+			echo "Remote: $$remote"; \
 		else \
 			echo "Remote: No remote configured"; \
 		fi; \
 		echo ""; \
 		echo "$(YELLOW)Working Tree Status:$(NC)"; \
-		if git status --porcelain | grep -q .; then \
-			git status --porcelain | head -5; \
-			file_count=$$(git status --porcelain | wc -l); \
+		working_tree=$$(git --no-optional-locks status --porcelain); \
+		if [ -n "$$working_tree" ]; then \
+			printf '%s\n' "$$working_tree" | head -5; \
+			file_count=$$(printf '%s\n' "$$working_tree" | wc -l); \
 			if [ "$$file_count" -gt 5 ]; then \
 				remaining=$$(( $$file_count - 5 )); \
 				echo "... and $$remaining more files"; \
@@ -288,42 +296,31 @@ status:
 			echo "✅ Working tree is clean"; \
 		fi; \
 	else \
-		echo "❌ Not a git repository"; \
+		echo "❌ Not a git repository"; exit 1; \
 	fi
 
 ## Install Nerd Fonts (Agave Nerd Font)
 fonts:
 	@echo "$(GREEN)Installing Agave Nerd Font...$(NC)"
-	@if [ "$(OS_NAME)" = "macOS" ]; then \
-		if command -v brew >/dev/null 2>&1; then \
-			echo "Installing Agave Nerd Font via Homebrew..."; \
-			brew install --cask font-agave-nerd-font; \
-			echo "$(YELLOW)✅ Agave Nerd Font installed via Homebrew$(NC)"; \
-			echo "$(YELLOW)📝 To set in Terminal: Terminal > Preferences > Profiles > Text > Change Font$(NC)"; \
-			echo "$(YELLOW)📝 To set in iTerm2: iTerm2 > Preferences > Profiles > Text > Change Font$(NC)"; \
-			echo "$(YELLOW)📝 Font name: 'AgaveNerdFont-Regular' or 'Agave Nerd Font'$(NC)"; \
-		else \
-			echo "$(YELLOW)Homebrew not found. Installing manually...$(NC)"; \
-			echo "Downloading Agave Nerd Font..."; \
-			curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
-			mkdir -p $$HOME/Library/Fonts; \
-			unzip -o /tmp/Agave.zip -d /tmp/AgaveNerdFont; \
-			mv /tmp/AgaveNerdFont/*.ttf $$HOME/Library/Fonts/ 2>/dev/null || true; \
-			rm -rf /tmp/Agave.zip /tmp/AgaveNerdFont; \
-			echo "$(YELLOW)✅ Agave Nerd Font installed manually$(NC)"; \
-		fi; \
-	elif [ "$(OS_NAME)" = "Linux" ]; then \
-		echo "Downloading Agave Nerd Font..."; \
-		curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
-		mkdir -p $$HOME/.local/share/fonts; \
-		unzip -o /tmp/Agave.zip -d $$HOME/.local/share/fonts/AgaveNerdFont; \
-		fc-cache -fv; \
-		rm -f /tmp/Agave.zip; \
-		echo "$(YELLOW)✅ Agave Nerd Font installed$(NC)"; \
-		echo "$(YELLOW)📝 Set your terminal font to 'Agave Nerd Font' in preferences$(NC)"; \
+	@set -eu; \
+	if [ "$(OS)" = darwin ] && command -v brew >/dev/null 2>&1; then \
+		brew install --cask font-agave-nerd-font; \
 	else \
-		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads$(NC)"; \
-	fi
+		case "$(OS)" in \
+			darwin) destination="$$HOME/Library/Fonts" ;; \
+			linux) destination="$${XDG_DATA_HOME:-$$HOME/.local/share}/fonts/AgaveNerdFont"; command -v fc-cache >/dev/null ;; \
+			*) echo "Unsupported OS: $(OS)" >&2; exit 1 ;; \
+		esac; \
+		command -v curl >/dev/null; command -v unzip >/dev/null; \
+		umask 077; temporary=$$(mktemp -d "$${TMPDIR:-/tmp}/dotfiles-fonts.XXXXXX"); \
+		trap 'rm -rf "$$temporary"' EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; \
+		curl -fL --retry 2 -o "$$temporary/Agave.zip" https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+		unzip -oq "$$temporary/Agave.zip" '*.ttf' -d "$$temporary/fonts"; \
+		set -- "$$temporary/fonts/"*.ttf; [ -f "$$1" ]; \
+		mkdir -p "$$destination"; cp "$$@" "$$destination/"; \
+		if [ "$(OS)" = linux ]; then fc-cache -f "$$destination"; fi; \
+	fi; \
+	echo "Agave Nerd Font installed; select it in your terminal preferences."
 
 ## Update ZSH plugins
 plugins:
@@ -357,14 +354,19 @@ deps:
 	@echo "  vim       - Text editor"
 	@echo "  curl      - Download tool"
 	@echo ""
+	@echo "$(YELLOW)Validation and Hooks:$(NC)"
+	@echo "  make, bash, zsh, vim, git, jq, ripgrep, shellcheck - offline tests"
+	@echo "  pre-commit - optional hooks (also downloads hook environments)"
+	@echo "  mcpm, uvx, jq, zsh, macOS Keychain - Atlassian targets"
+	@echo ""
 	@echo "$(YELLOW)Package Manager Specific:$(NC)"
 	@if [ "$(OS)" = "darwin" ]; then \
 		echo "  brew      - Package manager (Homebrew)"; \
-	elif [ "$(DISTRO)" = "ubuntu" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "apt" ]; then \
 		echo "  apt       - Package manager"; \
-	elif [ "$(DISTRO)" = "fedora" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "dnf" ]; then \
 		echo "  dnf       - Package manager"; \
-	elif [ "$(DISTRO)" = "arch" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "pacman" ]; then \
 		echo "  pacman    - Package manager"; \
 	fi
 	@echo ""
@@ -389,45 +391,35 @@ deps:
 ## Generate system documentation
 docs:
 	@echo "$(GREEN)Generating system documentation...$(NC)"
-	@echo "# System Information" > SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "Generated on $$(date) for $(OS_NAME)" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## System Details" >> SYSTEM_INFO.md
-	@echo "- OS: $(OS_NAME)" >> SYSTEM_INFO.md
-	@echo "- Architecture: $(ARCH)" >> SYSTEM_INFO.md
-	@if [ "$(OS)" = "linux" ]; then \
-		echo "- Distribution: $(DISTRO)" >> SYSTEM_INFO.md; \
-	fi
-	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## XDG Base Directory Specification" >> SYSTEM_INFO.md
-	@echo "- XDG_CONFIG_HOME: $${XDG_CONFIG_HOME:-$$HOME/.config}" >> SYSTEM_INFO.md
-	@echo "- XDG_DATA_HOME: $${XDG_DATA_HOME:-$$HOME/.local/share}" >> SYSTEM_INFO.md
-	@echo "- XDG_CACHE_HOME: $${XDG_CACHE_HOME:-$$HOME/.cache}" >> SYSTEM_INFO.md
-	@echo "- XDG_STATE_HOME: $${XDG_STATE_HOME:-$$HOME/.local/state}" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## Configuration Files" >> SYSTEM_INFO.md
-	@find config -name "*.zsh" -o -name "*.vim" -o -name "gitconfig" 2>/dev/null | while read file; do \
-		echo "- $$file" >> SYSTEM_INFO.md; \
-	done
+	@set -eu; umask 077; \
+	[ ! -L SYSTEM_INFO.md ] && [ ! -d SYSTEM_INFO.md ] || { echo "Refusing linked/directory SYSTEM_INFO.md" >&2; exit 1; }; \
+	temporary=$$(mktemp ./SYSTEM_INFO.md.XXXXXX); \
+	trap 'rm -f "$$temporary"' EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; \
+	{ \
+		printf '# System Information\n\nGenerated on %s for %s\n\n' "$$(date)" "$(OS_NAME)"; \
+		printf '## System Details\n- OS: %s\n- Architecture: %s\n' "$(OS_NAME)" "$(ARCH)"; \
+		if [ "$(OS)" = linux ]; then printf '%s\n' "- Distribution: $(DISTRO)"; fi; \
+		printf '%s\n' "- Package Manager: $(PACKAGE_MANAGER)" "" "## XDG Base Directory Specification" \
+			"- XDG_CONFIG_HOME: $${XDG_CONFIG_HOME:-$$HOME/.config}" \
+			"- XDG_DATA_HOME: $${XDG_DATA_HOME:-$$HOME/.local/share}" \
+			"- XDG_CACHE_HOME: $${XDG_CACHE_HOME:-$$HOME/.cache}" \
+			"- XDG_STATE_HOME: $${XDG_STATE_HOME:-$$HOME/.local/state}" "" "## Configuration Files"; \
+		find config -type f \( -name '*.zsh' -o -name '*.vim' -o -name '.zsh*' -o -name '.zprofile' -o -name 'vimrc' -o -name 'gitconfig*' \) -exec printf -- '- %s\n' {} +; \
+	} > "$$temporary"; \
+	mv -f "$$temporary" SYSTEM_INFO.md
 	@echo "✅ System documentation generated as SYSTEM_INFO.md"
 
 ## Install development tools
 dev-setup:
 	@echo "$(GREEN)Setting up development environment for $(OS_NAME)...$(NC)"
-	@if [ "$(OS)" = "darwin" ] && command -v brew >/dev/null 2>&1; then \
-		brew install shellcheck pre-commit; \
-	elif [ "$(DISTRO)" = "ubuntu" ]; then \
-		sudo apt install -y shellcheck; \
-	elif [ "$(DISTRO)" = "fedora" ]; then \
-		sudo dnf install -y shellcheck; \
-	elif [ "$(DISTRO)" = "arch" ]; then \
-		sudo pacman -S shellcheck; \
-	fi
-	@if command -v npm >/dev/null 2>&1; then \
-		npm install -g markdownlint-cli; \
-	fi
+	@set -eu; \
+	case "$(PACKAGE_MANAGER)" in \
+		brew) brew install make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		apt) sudo apt update; sudo apt install -y make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		dnf) sudo dnf install -y make bash zsh vim git jq ripgrep ShellCheck pre-commit ;; \
+		pacman) sudo pacman -Syu --needed make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		*) echo "Unsupported development setup: $(OS)/$(DISTRO)" >&2; exit 1 ;; \
+	esac
 	@echo "✅ Development tools installed"
 
 ## Setup git hooks
@@ -438,6 +430,6 @@ git-hooks:
 perf:
 	@bash scripts/test-dotfiles.sh --performance
 
-## Show make targets (alternative help)  
+## Show make targets (alternative help)
 list:
-	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | cut -d: -f1 | sort | uniq
+	@awk '/^[a-zA-Z_-]+:/ { sub(/:.*/, ""); print }' Makefile | sort -u
