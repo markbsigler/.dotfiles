@@ -12,7 +12,7 @@ if ! command -v security >/dev/null 2>&1; then
 fi
 
 echo "Configure Atlassian MCP Keychain secrets"
-echo "Token values are read silently and never passed as command arguments."
+echo "Keychain will prompt directly for token values; do not supply tokens as arguments."
 
 CONF_SERVICE="${ATL_MCP_CONFLUENCE_TOKEN_SERVICE:-atl_mcp_confluence_token}"
 JIRA_SERVICE="${ATL_MCP_JIRA_TOKEN_SERVICE:-atl_mcp_jira_token}"
@@ -27,25 +27,13 @@ if [[ -n "$jira_input" ]]; then
     JIRA_SERVICE="$jira_input"
 fi
 
-read -r -s -p "Enter Confluence token: " conf_token
-echo
-if [[ -z "$conf_token" ]]; then
-    echo "Confluence token cannot be empty." >&2
-    exit 1
+read -r -p "Configure optional Confluence access? [y/N]: " configure_confluence
+if [[ "$configure_confluence" == y || "$configure_confluence" == Y ]]; then
+    security add-generic-password -U -a "$USER" -s "$CONF_SERVICE" -T "" -w
 fi
-security add-generic-password -U -a "$USER" -s "$CONF_SERVICE" -w "$conf_token" >/dev/null
-unset conf_token
-
-read -r -s -p "Enter Jira token: " jira_token
-echo
-if [[ -z "$jira_token" ]]; then
-    echo "Jira token cannot be empty." >&2
-    exit 1
-fi
-security add-generic-password -U -a "$USER" -s "$JIRA_SERVICE" -w "$jira_token" >/dev/null
-unset jira_token
+security add-generic-password -U -a "$USER" -s "$JIRA_SERVICE" -T "" -w
 
 echo "Stored Keychain secrets:"
-echo "  - $CONF_SERVICE"
+if [[ "$configure_confluence" == y || "$configure_confluence" == Y ]]; then echo "  - $CONF_SERVICE"; fi
 echo "  - $JIRA_SERVICE"
 echo "Next: run ~/.dotfiles/scripts/mcpm-atlassian-migrate.sh"

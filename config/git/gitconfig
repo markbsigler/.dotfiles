@@ -140,13 +140,10 @@
 # Credential helpers are configured in platform-specific files above
 [credential "https://github.com"]
 	helper = 
-	helper = !/usr/bin/gh auth git-credential
+	helper = !gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/usr/bin/gh auth git-credential
-[credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[trace2]
-	eventTarget = af_unix:stream:/Users/msigler/.git-ai/internal/daemon/trace2.sock
-	eventNesting = 0
+	helper = !gh auth git-credential
+
+[include]
+	path = ~/.gitconfig.local

@@ -1,303 +1,75 @@
 #!/usr/bin/env bash
-# Security audit script for dotfiles repository
-# Checks for potential security issues
-
 set -euo pipefail
 
-# Colors
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly NC='\033[0m'
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+SCAN_DIR="${1:-$REPO_DIR}"
+for dependency in git rg jq; do
+    command -v "$dependency" >/dev/null || { printf 'Required command missing: %s\n' "$dependency" >&2; exit 2; }
+done
+cd "$SCAN_DIR"
+git rev-parse --show-toplevel >/dev/null
 
-# Counters
-WARNINGS=0
-ERRORS=0
-CHECKS=0
+temporary="$(mktemp -d)"
+trap 'rm -rf "$temporary"' EXIT
+git ls-files -z --cached --others --exclude-standard > "$temporary/files"
+errors=0
+checked=0
+key_pattern='(?:[a-z_][a-z0-9_]*[_-])?(?:password|secret|api[_-]?key|token|credentials|authorization)'
+pattern="(?i)(?:\\b${key_pattern}\\s*=|[\"\\x27]${key_pattern}[\"\\x27]\\s*:|^\\s*${key_pattern}\\s*:)\\s*[\"\\x27]?([a-z0-9_+/=.:-]{8,})"
+signature='(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)'
+placeholder='^(your[_-]|example|placeholder|dummy|test[_-]|changeme|x{8,}|ghp_x+|sk-x+|\*+|<)'
 
-# Logging functions
-info() { echo -e "${BLUE}ℹ️  $*${NC}"; }
-success() { echo -e "${GREEN}✅ $*${NC}"; }
-warning() { echo -e "${YELLOW}⚠️  $*${NC}"; WARNINGS=$((WARNINGS + 1)); }
-error() { echo -e "${RED}❌ $*${NC}"; ERRORS=$((ERRORS + 1)); }
-
-echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     🔒 Security Audit Report 🔒       ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
-echo ""
-
-# Change to dotfiles directory
-cd ~/.dotfiles || exit 1
-
-# ============================================================================
-# Check 1: Hard-coded Secrets
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}1. Checking for potential hard-coded secrets...${NC}"
-
-if command -v rg &> /dev/null; then
-    # Use ripgrep if available
-    # Pattern: keyword = "literal_value_8+_chars"
-    # Excludes: comments, variable expansions ($VAR, $(...)), "author" (git alias noise)
-    SECRETS_PATTERN='(password|secret|api[_-]?key|token|credentials)\s*[=:]\s*["'\''`][^"'\''`$]{8,}["'\''`]'
-    matches=$(rg -i "$SECRETS_PATTERN" . \
-       --glob '!*.md' \
-       --glob '!*audit*' \
-       --glob '!*.template' \
-       --glob '!.git/**' \
-       --glob '!scripts/mcpm-atlassian-secure.sh' \
-       2>/dev/null | grep -v '^\s*#' | grep -v '^\./[^:]*:\s*#' || true)
-    if [[ -n "$matches" ]]; then
-        echo "$matches"
-        warning "Found potential hard-coded secrets"
-        echo "   Review the matches above and ensure no real secrets are committed"
-    else
-        success "No hard-coded secrets found"
+while IFS= read -r -d '' file; do
+    [[ -e "$file" || -L "$file" ]] || continue
+    if [[ -L "$file" ]]; then
+        printf 'SKIP symlink (target not scanned): %s\n' "$file"
+        continue
     fi
-else
-    # Fallback to grep
-    if grep -ri 'password\|secret\|api_key\|token' . \
-       --exclude='*.md' \
-       --exclude='*audit*' \
-       --exclude-dir='.git' 2>/dev/null | grep -v '^\s*#' | grep -v ':\s*#' | head -5; then
-        warning "Found potential hard-coded secrets (install ripgrep for better detection)"
+    [[ -f "$file" ]] || continue
+    checked=$((checked + 1))
+    case "$file" in
+        .env|*/.env|.env.*|*/.env.*|.secrets/*|*/.secrets/*|*.pem|*.key|*.p12|*.pfx)
+            printf 'REVIEW sensitive file in scan inventory: %s\n' "$file"
+            errors=$((errors + 1)) ;;
+    esac
+    if rg --no-config --hidden --no-ignore --text --pcre2 -n -o -e "$pattern" -e "$signature" -- "$file" > "$temporary/matches"; then
+        while IFS= read -r match; do
+            line="${match%%:*}"
+            value="${match#*:}"
+            if ! printf '%s\n' "$value" | rg --no-config --pcre2 -q "$signature"; then
+                value="$(printf '%s\n' "$value" | rg --no-config --pcre2 --replace '$1' -o "$pattern")"
+                if printf '%s\n' "$value" | rg --no-config -iq "$placeholder"; then continue; fi
+            fi
+            printf 'REVIEW possible secret: %s:%s [REDACTED]\n' "$file" "$line"
+            errors=$((errors + 1))
+        done < "$temporary/matches"
     else
-        success "No hard-coded secrets found"
+        exit_code=$?
+        [[ "$exit_code" == 1 ]] || { printf 'Scan failed: %s\n' "$file" >&2; exit 2; }
     fi
-fi
-
-# ============================================================================
-# Check 2: File Permissions
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}2. Checking file permissions...${NC}"
-
-# Find world-writable files
-world_writable=$(find . -type f -perm -002 2>/dev/null | grep -v ".git" || true)
-if [[ -n "$world_writable" ]]; then
-    warning "Found world-writable files:"
-    echo "$world_writable"
-    echo "   Run: chmod 644 <filename> to fix"
-else
-    success "No world-writable files found"
-fi
-
-# Check scripts are executable
-non_executable_scripts=$(find scripts -type f -name "*.sh" ! -perm -100 2>/dev/null || true)
-if [[ -n "$non_executable_scripts" ]]; then
-    warning "Found non-executable scripts:"
-    echo "$non_executable_scripts"
-    echo "   Run: chmod +x <filename> to fix"
-else
-    success "All scripts are executable"
-fi
-
-# ============================================================================
-# Check 3: .env Files
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}3. Checking for .env files...${NC}"
-
-env_files=$(find . -name ".env*" -type f 2>/dev/null | grep -v ".gitignore" || true)
-if [[ -n "$env_files" ]]; then
-    warning "Found .env files (ensure they're in .gitignore):"
-    echo "$env_files"
-    
-    # Check if they're in .gitignore
-    for file in $env_files; do
-        filename=$(basename "$file")
-        if ! grep -q "$filename" .gitignore 2>/dev/null; then
-            error "  $filename is NOT in .gitignore!"
+    if [[ "$file" == *.json ]]; then
+        if ! jq -e 'true' "$file" >/dev/null 2>&1; then
+            printf 'REVIEW invalid JSON: %s\n' "$file"
+            errors=$((errors + 1))
+        elif jq -e '
+            [.. | objects | to_entries[] |
+             select(.key | test("(^|_)(password|secret|api_?key|token|credentials|authorization)$"; "i")) |
+             select(.value | type == "string") |
+             select(.value | length > 0) |
+             select(.value | test("^(\\$|<|your[_-]|example|placeholder|dummy|test[_-]|changeme|x{8,})"; "i") | not)] |
+            length > 0' "$file" >/dev/null 2>&1; then
+            printf 'REVIEW JSON credential field: %s [REDACTED]\n' "$file"
+            errors=$((errors + 1))
         fi
-    done
-else
-    success "No .env files found"
-fi
+    fi
+done < "$temporary/files"
 
-# ============================================================================
-# Check 4: .gitignore Coverage
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}4. Checking .gitignore coverage for sensitive files...${NC}"
-
-sensitive_patterns=(
-    "*.key"
-    "*.pem"
-    "*.p12"
-    "*.pfx"
-    "*secret*"
-    "*.env"
-    ".secrets/"
-    "credentials"
-)
-
-missing=()
-for pattern in "${sensitive_patterns[@]}"; do
-    if ! grep -q "$pattern" .gitignore 2>/dev/null; then
-        missing+=("$pattern")
+for private_path in .secrets/probe.env local/local.zsh local/machine.info config/mcpm/servers.local.json; do
+    if ! git check-ignore --no-index -q -- "$private_path"; then
+        printf 'REVIEW missing ignore coverage: %s\n' "$private_path"
+        errors=$((errors + 1))
     fi
 done
-
-if [[ ${#missing[@]} -gt 0 ]]; then
-    warning "Missing patterns in .gitignore:"
-    printf '   - %s\n' "${missing[@]}"
-    echo "   Consider adding these patterns to .gitignore"
-else
-    success ".gitignore covers all sensitive file patterns"
-fi
-
-# ============================================================================
-# Check 5: SSH Configuration
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}5. Checking SSH configuration...${NC}"
-
-if [[ -d ~/.ssh ]]; then
-    # Check .ssh directory permissions
-    ssh_perms=$(stat -f %A ~/.ssh 2>/dev/null || stat -c %a ~/.ssh 2>/dev/null)
-    if [[ "$ssh_perms" == "700" ]]; then
-        success "$HOME/.ssh has correct permissions (700)"
-    else
-        warning "$HOME/.ssh should have 700 permissions (current: $ssh_perms)"
-        echo "   Run: chmod 700 ~/.ssh"
-    fi
-    
-    # Check private key permissions
-    if find ~/.ssh -name "id_*" -not -name "*.pub" -type f 2>/dev/null | head -1 > /dev/null; then
-        bad_key_perms=$(find ~/.ssh -name "id_*" -not -name "*.pub" -type f ! -perm 600 2>/dev/null || true)
-        if [[ -n "$bad_key_perms" ]]; then
-            warning "Found private keys with incorrect permissions:"
-            echo "$bad_key_perms"
-            echo "   Run: chmod 600 <keyfile>"
-        else
-            success "All private SSH keys have correct permissions (600)"
-        fi
-    fi
-    
-    # Check SSH config permissions
-    if [[ -f ~/.ssh/config ]]; then
-        config_perms=$(stat -f %A ~/.ssh/config 2>/dev/null || stat -c %a ~/.ssh/config 2>/dev/null)
-        if [[ "$config_perms" == "600" ]]; then
-            success "$HOME/.ssh/config has correct permissions (600)"
-        else
-            warning "$HOME/.ssh/config should have 600 permissions (current: $config_perms)"
-            echo "   Run: chmod 600 ~/.ssh/config"
-        fi
-    fi
-else
-    info "$HOME/.ssh directory not found (not necessarily a problem)"
-fi
-
-# ============================================================================
-# Check 6: Secrets Directory
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}6. Checking secrets directory...${NC}"
-
-if [[ -d ~/.secrets ]]; then
-    # Check directory permissions
-    secrets_perms=$(stat -f %A ~/.secrets 2>/dev/null || stat -c %a ~/.secrets 2>/dev/null)
-    if [[ "$secrets_perms" == "700" ]]; then
-        success "$HOME/.secrets has correct permissions (700)"
-    else
-        warning "$HOME/.secrets should have 700 permissions (current: $secrets_perms)"
-        echo "   Run: chmod 700 ~/.secrets"
-    fi
-    
-    # Check file permissions in secrets directory
-    if [[ -f ~/.secrets/env ]]; then
-        env_perms=$(stat -f %A ~/.secrets/env 2>/dev/null || stat -c %a ~/.secrets/env 2>/dev/null)
-        if [[ "$env_perms" == "600" ]]; then
-            success "$HOME/.secrets/env has correct permissions (600)"
-        else
-            warning "$HOME/.secrets/env should have 600 permissions (current: $env_perms)"
-            echo "   Run: chmod 600 ~/.secrets/env"
-        fi
-    fi
-    
-    # Check if secrets directory is in .gitignore
-    if grep -q ".secrets/" .gitignore 2>/dev/null; then
-        success ".secrets/ is in .gitignore"
-    else
-        error ".secrets/ is NOT in .gitignore!"
-        echo "   Add '.secrets/' to .gitignore immediately"
-    fi
-else
-    info "$HOME/.secrets directory not found (create with 'mkdir -m 700 $HOME/.secrets' if needed)"
-fi
-
-# ============================================================================
-# Check 7: Git Configuration
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}7. Checking git configuration...${NC}"
-
-# Check if using HTTPS with passwords
-if git remote get-url origin 2>/dev/null | grep -q "https://"; then
-    warning "Using HTTPS for git remote (consider switching to SSH)"
-    echo "   See GITHUB_AUTH_SETUP.md for SSH setup instructions"
-else
-    success "Using SSH for git remote"
-fi
-
-# Check for GPG signing
-if git config --get user.signingkey &> /dev/null; then
-    success "GPG signing is configured"
-else
-    info "GPG signing not configured (optional but recommended)"
-    echo "   See: https://docs.github.com/en/authentication/managing-commit-signature-verification"
-fi
-
-# ============================================================================
-# Check 8: Public Files in Repository
-# ============================================================================
-
-CHECKS=$((CHECKS + 1))
-echo -e "\n${BLUE}8. Checking for accidentally tracked sensitive files...${NC}"
-
-# Check git for tracked sensitive files
-tracked_sensitive=$(git ls-files | grep -E '\.(key|pem|p12|pfx)$' 2>/dev/null || true)
-if [[ -n "$tracked_sensitive" ]]; then
-    error "Found sensitive files tracked in git:"
-    echo "$tracked_sensitive"
-    echo "   Remove with: git rm --cached <filename>"
-    echo "   Then add to .gitignore"
-else
-    success "No sensitive files tracked in git"
-fi
-
-# ============================================================================
-# Summary
-# ============================================================================
-
-echo ""
-echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          Security Audit Summary        ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
-echo ""
-echo "Checks performed: $CHECKS"
-echo -e "${YELLOW}Warnings: $WARNINGS${NC}"
-echo -e "${RED}Errors: $ERRORS${NC}"
-echo ""
-
-if [[ $ERRORS -gt 0 ]]; then
-    error "Security audit found $ERRORS critical issues!"
-    echo "   Please fix the errors above immediately"
-    exit 1
-elif [[ $WARNINGS -gt 0 ]]; then
-    warning "Security audit found $WARNINGS warnings"
-    echo "   Review and address the warnings above"
-    exit 0
-else
-    success "Security audit passed! No issues found 🎉"
-    exit 0
-fi
-
+printf 'Scanned %s working-tree files; %s findings. Values redacted.\n' "$checked" "$errors"
+printf 'Heuristic scan only; ignored untracked files, Git history, and live host permissions are not audited.\n'
+[[ "$errors" == 0 ]]

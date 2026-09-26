@@ -2,19 +2,12 @@
 
 # Simple plugin manager using git
 PLUGIN_DIR="$XDG_DATA_HOME/zsh/plugins"
-mkdir -p "$PLUGIN_DIR"
 
 # Plugin loader function
 load_plugin() {
     local plugin_name="$1"
-    local plugin_url="$2"
     local plugin_path="$PLUGIN_DIR/$plugin_name"
-    
-    # Clone if doesn't exist
-    if [[ ! -d "$plugin_path" ]]; then
-        echo "Installing plugin: $plugin_name"
-        git clone --depth 1 "$plugin_url" "$plugin_path" 2>/dev/null
-    fi
+    [[ -d "$plugin_path" ]] || return 0
     
     # Load plugin - try multiple possible entry points
     local loaded=false
@@ -28,9 +21,9 @@ load_plugin() {
     
     # If no standard entry point found, look for any .zsh file
     if [[ "$loaded" == false ]]; then
-        local zsh_files=("$plugin_path"/*.zsh)
-        if [[ -f "${zsh_files[0]}" ]]; then
-            source "${zsh_files[0]}"
+        local zsh_files=("$plugin_path"/*.zsh(N))
+        if [[ ${#zsh_files} -gt 0 ]]; then
+            source "${zsh_files[1]}"
         fi
     fi
 }
@@ -100,16 +93,13 @@ setup_fzf() {
     [[ -f "$fzf_keybindings" ]] && source "$fzf_keybindings"
 }
 
-# Load FZF
-setup_fzf
-
 # Plugin management functions
 update_plugins() {
     echo "Updating zsh plugins..."
     local updated=0
     local failed=0
     
-    for plugin in "$PLUGIN_DIR"/*; do
+    for plugin in "$PLUGIN_DIR"/*(N); do
         if [[ -d "$plugin/.git" ]]; then
             local plugin_name=$(basename "$plugin")
             echo -n "Updating $plugin_name... "
@@ -124,6 +114,7 @@ update_plugins() {
     done
     
     echo "Plugin update complete! Updated: $updated, Failed: $failed"
+    (( failed == 0 ))
 }
 
 clean_plugins() {

@@ -6,93 +6,93 @@
 # Secrets Directory Setup
 # ============================================================================
 
-# Create secure secrets directory if it doesn't exist
-# This directory should NOT be tracked in git
 SECRETS_DIR="$HOME/.secrets"
-if [[ ! -d "$SECRETS_DIR" ]]; then
-    mkdir -p "$SECRETS_DIR"
-    chmod 700 "$SECRETS_DIR"  # Only user can read/write/execute
-fi
 
 # ============================================================================
 # Method 1: Plain File (Simple but less secure)
 # ============================================================================
 
-# Load secrets from a plain text file
-# Format: export KEY="value"
-# Example: export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
+SECRETS_ENV_FILE="$SECRETS_DIR/env.json"
 
-SECRETS_ENV_FILE="$SECRETS_DIR/env"
+_secret_key_valid() {
+    [[ "${1:-}" =~ '^[A-Za-z_][A-Za-z0-9_]*$' ]] || {
+        print -u2 -- 'Invalid environment variable name'
+        return 1
+    }
+}
 
-if [[ -f "$SECRETS_ENV_FILE" ]]; then
-    # Ensure file has correct permissions
-    if [[ $(stat -f '%A' "$SECRETS_ENV_FILE" 2>/dev/null || stat -c '%a' "$SECRETS_ENV_FILE" 2>/dev/null) != "600" ]]; then
-        chmod 600 "$SECRETS_ENV_FILE"
+_secret_store_check() {
+    local permissions
+    command -v jq >/dev/null || return 1
+    [[ ! -L "$SECRETS_DIR" && ! -L "$SECRETS_ENV_FILE" ]] || return 1
+    [[ ! -e "$SECRETS_DIR" || ( -d "$SECRETS_DIR" && -O "$SECRETS_DIR" ) ]] || return 1
+    if [[ -d "$SECRETS_DIR" ]]; then
+        permissions="$(stat -f %Lp "$SECRETS_DIR" 2>/dev/null || stat -c %a "$SECRETS_DIR")" || return 1
+        [[ "$permissions" == 700 ]] || { print -u2 -- 'Secrets directory must have mode 700'; return 1; }
     fi
-    source "$SECRETS_ENV_FILE"
-fi
+    if [[ -e "$SECRETS_ENV_FILE" ]]; then
+        [[ -f "$SECRETS_ENV_FILE" && -O "$SECRETS_ENV_FILE" ]] || return 1
+        permissions="$(stat -f %Lp "$SECRETS_ENV_FILE" 2>/dev/null || stat -c %a "$SECRETS_ENV_FILE")" || return 1
+        [[ "$permissions" == 600 ]] || { print -u2 -- 'Secrets file must have mode 600'; return 1; }
+        command jq -e 'type == "object" and all(to_entries[]; (.key | test("^[A-Za-z_][A-Za-z0-9_]*$")) and (.value | type == "string"))' "$SECRETS_ENV_FILE" >/dev/null 2>&1 || return 1
+    fi
+}
 
 # Helper function to add secrets to the env file
 secret_add() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-        echo "Usage: secret_add <KEY> <value>"
-        echo "Example: secret_add GITHUB_TOKEN ghp_xxxxxxxxxxxx"
+    emulate -L zsh
+    unsetopt xtrace
+    local key="${1:-}" value temporary input
+    [[ $# == 1 ]] || { print -u2 -- 'Usage: secret_add KEY (value via prompt or stdin)'; return 1; }
+    _secret_key_valid "$key" && _secret_store_check || return 1
+    if [[ -t 0 ]]; then
+        read -rs 'value?Secret: ' || return 1
+        print
+    else
+        value="$(cat; printf '.')"
+        value="${value%.}"
+    fi
+    (umask 077; mkdir -p "$SECRETS_DIR") || return 1
+    chmod 700 "$SECRETS_DIR" || return 1
+    input="$SECRETS_ENV_FILE"
+    [[ -f "$input" ]] || input=/dev/null
+    temporary="$(mktemp "$SECRETS_DIR/.env.XXXXXX")" || return 1
+    if print -rn -- "$value" | command jq -s --arg key "$key" --rawfile value /dev/stdin '(.[0] // {}) + {($key): $value}' "$input" > "$temporary" &&
+        chmod 600 "$temporary" && mv -f "$temporary" "$SECRETS_ENV_FILE"; then
+        print -- "Stored $key; use secret_load $key when needed."
+    else
+        rm -f "$temporary"
         return 1
     fi
-    
-    local key="$1"
-    local value="$2"
-    
-    # Create file if it doesn't exist
-    touch "$SECRETS_ENV_FILE"
-    chmod 600 "$SECRETS_ENV_FILE"
-    
-    # Remove existing entry if present
-    if grep -q "^export ${key}=" "$SECRETS_ENV_FILE"; then
-        # Cross-platform sed
-        if [[ "$OSTYPE" == darwin* ]]; then
-            sed -i '' "/^export ${key}=/d" "$SECRETS_ENV_FILE"
-        else
-            sed -i "/^export ${key}=/d" "$SECRETS_ENV_FILE"
-        fi
-    fi
-    
-    # Add new entry
-    echo "export ${key}=\"${value}\"" >> "$SECRETS_ENV_FILE"
-    echo "✅ Secret '${key}' added to $SECRETS_ENV_FILE"
-    echo "⚠️  Run 'source ~/.zshrc' or restart your shell to load the secret"
 }
 
 # Helper function to list secrets (without values)
 secret_list() {
-    if [[ -f "$SECRETS_ENV_FILE" ]]; then
-        echo "Stored secrets:"
-        grep '^export ' "$SECRETS_ENV_FILE" | sed 's/export \([^=]*\)=.*/  - \1/'
-    else
-        echo "No secrets file found at $SECRETS_ENV_FILE"
-    fi
+    _secret_store_check && [[ -f "$SECRETS_ENV_FILE" ]] || return 1
+    command jq -r 'keys[]' "$SECRETS_ENV_FILE"
 }
 
 # Helper function to remove a secret
 secret_remove() {
-    if [[ -z "$1" ]]; then
-        echo "Usage: secret_remove <KEY>"
+    local key="${1:-}" temporary
+    _secret_key_valid "$key" && _secret_store_check && [[ -f "$SECRETS_ENV_FILE" ]] || return 1
+    temporary="$(mktemp "$SECRETS_DIR/.env.XXXXXX")" || return 1
+    if command jq --arg key "$key" 'del(.[$key])' "$SECRETS_ENV_FILE" > "$temporary" &&
+        chmod 600 "$temporary" && mv -f "$temporary" "$SECRETS_ENV_FILE"; then
+        print -- "Removed stored value for $key. Existing exports are unchanged."
+    else
+        rm -f "$temporary"
         return 1
     fi
-    
-    local key="$1"
-    
-    if [[ -f "$SECRETS_ENV_FILE" ]]; then
-        # Cross-platform sed
-        if [[ "$OSTYPE" == darwin* ]]; then
-            sed -i '' "/^export ${key}=/d" "$SECRETS_ENV_FILE"
-        else
-            sed -i "/^export ${key}=/d" "$SECRETS_ENV_FILE"
-        fi
-        echo "✅ Secret '${key}' removed from $SECRETS_ENV_FILE"
-    else
-        echo "No secrets file found"
-    fi
+}
+
+secret_load() {
+    emulate -L zsh
+    unsetopt xtrace
+    local key="${1:-}" value
+    _secret_key_valid "$key" && _secret_store_check && [[ -f "$SECRETS_ENV_FILE" ]] || return 1
+    value="$(command jq -erj --arg key "$key" '.[$key] // error("Missing key")' "$SECRETS_ENV_FILE" && printf '.')" || return 1
+    export "$key=${value%.}"
 }
 
 # ============================================================================
@@ -101,7 +101,9 @@ secret_remove() {
 
 # Helper function to load a secret from pass
 secret_from_pass() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+    emulate -L zsh
+    unsetopt xtrace
+    if [[ $# != 2 ]]; then
         echo "Usage: secret_from_pass <ENV_VAR> <pass-path>"
         echo "Example: secret_from_pass GITHUB_TOKEN github/token"
         return 1
@@ -115,7 +117,9 @@ secret_from_pass() {
     local env_var="$1"
     local pass_path="$2"
     
-    local value=$(pass show "$pass_path" 2>/dev/null)
+    _secret_key_valid "$env_var" || return 1
+    local value
+    value="$(pass show "$pass_path" 2>/dev/null)" || return 1
     if [[ -n "$value" ]]; then
         export "${env_var}=${value}"
         echo "✅ Loaded ${env_var} from pass:${pass_path}"
@@ -131,7 +135,9 @@ secret_from_pass() {
 
 # Helper function to load a secret from 1Password
 secret_from_1password() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+    emulate -L zsh
+    unsetopt xtrace
+    if [[ $# != 2 ]]; then
         echo "Usage: secret_from_1password <ENV_VAR> <op-reference>"
         echo "Example: secret_from_1password GITHUB_TOKEN 'op://Personal/GitHub/token'"
         return 1
@@ -145,7 +151,9 @@ secret_from_1password() {
     local env_var="$1"
     local op_ref="$2"
     
-    local value=$(op read "$op_ref" 2>/dev/null)
+    _secret_key_valid "$env_var" || return 1
+    local value
+    value="$(op read "$op_ref" 2>/dev/null)" || return 1
     if [[ -n "$value" ]]; then
         export "${env_var}=${value}"
         echo "✅ Loaded ${env_var} from 1Password"
@@ -162,7 +170,9 @@ secret_from_1password() {
 
 # Helper function to load a secret from macOS Keychain
 secret_from_keychain() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+    emulate -L zsh
+    unsetopt xtrace
+    if [[ $# != 2 ]]; then
         echo "Usage: secret_from_keychain <ENV_VAR> <service-name>"
         echo "Example: secret_from_keychain GITHUB_TOKEN github_token"
         return 1
@@ -176,7 +186,9 @@ secret_from_keychain() {
     local env_var="$1"
     local service="$2"
     
-    local value=$(security find-generic-password -s "$service" -w 2>/dev/null)
+    _secret_key_valid "$env_var" || return 1
+    local value
+    value="$(security find-generic-password -s "$service" -w 2>/dev/null)" || return 1
     if [[ -n "$value" ]]; then
         export "${env_var}=${value}"
         echo "✅ Loaded ${env_var} from Keychain"
@@ -188,9 +200,8 @@ secret_from_keychain() {
 
 # Helper to add a secret to Keychain
 keychain_add() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-        echo "Usage: keychain_add <service-name> <secret>"
-        echo "Example: keychain_add github_token ghp_xxxxxxxxxxxx"
+    if [[ $# != 1 || -z "$1" ]]; then
+        echo "Usage: keychain_add <service-name> (Keychain prompts for the value)"
         return 1
     fi
     
@@ -200,14 +211,8 @@ keychain_add() {
     fi
     
     local service="$1"
-    local secret="$2"
     local account="${USER}"
-    
-    # Delete existing if present
-    security delete-generic-password -s "$service" 2>/dev/null
-    
-    # Add new secret
-    security add-generic-password -s "$service" -a "$account" -w "$secret"
+    security add-generic-password -U -s "$service" -a "$account" -T "" -w || return 1
     echo "✅ Secret added to Keychain service: $service"
 }
 
@@ -217,7 +222,9 @@ keychain_add() {
 
 # Helper function to load a secret from Linux Secret Service
 secret_from_keyring() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+    emulate -L zsh
+    unsetopt xtrace
+    if [[ $# != 2 ]]; then
         echo "Usage: secret_from_keyring <ENV_VAR> <service-name>"
         echo "Example: secret_from_keyring GITHUB_TOKEN github_token"
         return 1
@@ -236,7 +243,9 @@ secret_from_keyring() {
     local env_var="$1"
     local service="$2"
     
-    local value=$(secret-tool lookup service "$service" 2>/dev/null)
+    _secret_key_valid "$env_var" || return 1
+    local value
+    value="$(secret-tool lookup service "$service" 2>/dev/null)" || return 1
     if [[ -n "$value" ]]; then
         export "${env_var}=${value}"
         echo "✅ Loaded ${env_var} from Secret Service"
@@ -248,9 +257,8 @@ secret_from_keyring() {
 
 # Helper to add a secret to Secret Service
 keyring_add() {
-    if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-        echo "Usage: keyring_add <service-name> <secret>"
-        echo "Example: keyring_add github_token ghp_xxxxxxxxxxxx"
+    if [[ $# != 1 || -z "$1" ]]; then
+        echo "Usage: keyring_add <service-name> (prompt or stdin)"
         return 1
     fi
     
@@ -265,9 +273,7 @@ keyring_add() {
     fi
     
     local service="$1"
-    local secret="$2"
-    
-    echo -n "$secret" | secret-tool store --label="$service" service "$service"
+    secret-tool store --label="$service" service "$service" || return 1
     echo "✅ Secret added to Secret Service: $service"
 }
 
@@ -281,10 +287,11 @@ secret_help() {
 Secrets Management - Available Methods:
 
 1. Plain File (Simple, less secure)
-   - secret_add <KEY> <value>     # Add a secret
+    - secret_add <KEY>             # Prompt, or read literal stdin
+    - secret_load <KEY>            # Export on demand
    - secret_list                   # List all secrets (keys only)
    - secret_remove <KEY>           # Remove a secret
-   - File location: ~/.secrets/env
+    - File location: ~/.secrets/env.json (legacy env files are not executed)
 
 2. Password Store (pass) - Linux/macOS
    - secret_from_pass <ENV_VAR> <pass-path>
@@ -298,12 +305,12 @@ Secrets Management - Available Methods:
 
 4. macOS Keychain
    - secret_from_keychain <ENV_VAR> <service-name>
-   - keychain_add <service-name> <secret>
-   - Example: keychain_add github_token ghp_xxxx
+    - keychain_add <service-name>
+    - Example: keychain_add github_token
 
 5. Linux Secret Service (GNOME Keyring/KWallet)
    - secret_from_keyring <ENV_VAR> <service-name>
-   - keyring_add <service-name> <secret>
+    - keyring_add <service-name>
    - Requires: secret-tool (libsecret)
 
 Security Recommendations:
@@ -323,7 +330,7 @@ EOF
 # Uncomment and customize these examples for your secrets
 
 # Method 1: Plain file
-# Already loaded automatically if ~/.secrets/env exists
+# Load named values explicitly with secret_load.
 
 # Method 2: Password Store
 # secret_from_pass GITHUB_TOKEN github/token

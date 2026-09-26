@@ -106,7 +106,7 @@ nvm() {
 
 2. **Too many plugins**
 ```bash
-# Disable plugins temporarily in ~/.config/zsh/local.zsh
+# Disable plugins temporarily in ~/.dotfiles/local/local.zsh
 DISABLE_PLUGINS=true
 source ~/.zshrc
 
@@ -294,7 +294,7 @@ echo $PATH  # Shows same directory multiple times
 # Use clean_path function
 clean_path
 
-# Or manually in ~/.config/zsh/local.zsh
+# Or manually in ~/.dotfiles/local/local.zsh
 typeset -U PATH  # Ensures uniqueness
 ```
 
@@ -396,7 +396,7 @@ cd ~/.dotfiles && ./scripts/install-packages.sh
 
 **Solution:**
 ```bash
-# Add to ~/.config/zsh/local.zsh
+# Add to ~/.dotfiles/local/local.zsh
 export PATH="/snap/bin:$PATH"
 export PATH="/var/lib/flatpak/exports/bin:$PATH"
 

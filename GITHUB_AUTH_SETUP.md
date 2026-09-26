@@ -28,20 +28,17 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICgP8TXNCu7KYdqPwJX/WewMin3ysrPmwiudeTF8K1qU
 
 ## Alternative: Personal Access Token
 
+The shared Git configuration uses GitHub CLI as its HTTPS credential helper.
+Authenticate through its interactive flow; do not put a token in command arguments.
+Prefer fine-grained repository access with an expiration when a PAT is required.
+
 ```bash
-# 1. Create token: https://github.com/settings/tokens/new
-#    Scopes: repo
-#    Note: "dotfiles push"
-
-# 2. Store securely
-secret_add GITHUB_TOKEN "ghp_your_token_here"
-
-# 3. Configure credential helper
-git config --global credential.helper osxkeychain
-
-# 4. Push (use token as password)
-git push origin main
+gh auth login --hostname github.com --git-protocol https
+gh auth status
 ```
+
+Use `~/.gitconfig.local` for an alternative credential helper. Do not overwrite
+the shared symlinked Git configuration with machine-specific settings.
 
 ## Testing
 

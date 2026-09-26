@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 set -euo pipefail
+unsetopt xtrace
+unset JIRA_API_TOKEN CONFLUENCE_API_TOKEN CONFLUENCE_PERSONAL_TOKEN
 
 # Load required settings for Jira (required)
 : "${JIRA_URL:?Missing JIRA_URL}"
@@ -31,11 +33,16 @@ if [[ -n "$CONFLUENCE_URL" ]]; then
     if [[ -z "$CONFLUENCE_PERSONAL_TOKEN" ]]; then
         echo "Warning: CONFLUENCE_URL set but no token in Keychain (service: $ATL_MCP_CONFLUENCE_TOKEN_SERVICE)" >&2
         echo "Confluence functionality will be disabled." >&2
+        unset CONFLUENCE_URL CONFLUENCE_USERNAME
     else
         export CONFLUENCE_URL
         export CONFLUENCE_PERSONAL_TOKEN
     fi
+else
+    unset CONFLUENCE_URL CONFLUENCE_USERNAME
 fi
 
 # Execute mcp-atlassian (Server/Data Center uses env vars, not CLI args)
-exec uvx mcp-atlassian
+export READ_ONLY_MODE="${READ_ONLY_MODE:-true}"
+export ENABLED_TOOLS="${ENABLED_TOOLS:-jira_search,jira_get_issue}"
+exec uvx --with 'mcp==1.30.0' mcp-atlassian==0.23.1

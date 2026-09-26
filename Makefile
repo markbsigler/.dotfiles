@@ -2,6 +2,7 @@
 # Provides convenient commands for managing .dotfiles installation and maintenance
 
 .PHONY: help install update clean backup test lint docs doctor fonts plugins status deps restore list mcp-atlassian-setup mcp-atlassian-migrate mcp-atlassian-test
+.PHONY: install-dry force packages test-all test-quick test-integration test-zsh test-vim test-scripts security perf dev-setup git-hooks
 
 # Default target
 .DEFAULT_GOAL := help
@@ -15,8 +16,7 @@ CYAN := \033[0;36m
 NC := \033[0m
 
 # Configuration
-DOTFILES_DIR := $(HOME)/.dotfiles
-BACKUP_DIR := $(HOME)/.dotfiles-backup-$(shell date +%Y%m%d-%H%M%S)
+DOTFILES_DIR := $(CURDIR)
 
 # OS Detection
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -25,18 +25,16 @@ ARCH := $(shell uname -m)
 ifeq ($(OS),darwin)
 	OS_NAME := macOS
 	PACKAGE_MANAGER := brew
-	STAT_CMD := stat -f '%Sm' -t '%j'
 else ifeq ($(OS),linux)
 	OS_NAME := Linux
-	PACKAGE_MANAGER := apt
-	STAT_CMD := stat -c '%Y' | xargs -I{} date -d @{} +'%j'
+	PACKAGE_MANAGER := unknown
 	# Detect Linux distribution
 	DISTRO := $(shell test -f /etc/os-release && grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo unknown)
-	ifeq ($(DISTRO),ubuntu)
+	ifneq ($(filter ubuntu debian,$(DISTRO)),)
 		PACKAGE_MANAGER := apt
-	else ifeq ($(DISTRO),fedora)
+	else ifneq ($(filter fedora centos rhel,$(DISTRO)),)
 		PACKAGE_MANAGER := dnf
-	else ifeq ($(DISTRO),arch)
+	else ifneq ($(filter arch manjaro,$(DISTRO)),)
 		PACKAGE_MANAGER := pacman
 	endif
 else
@@ -61,14 +59,21 @@ help:
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make test           Test configuration files"
+	@echo "  make test-all       Same complete offline suite as make test"
+	@echo "  make test-quick     Required files and shell syntax"
+	@echo "  make test-integration  Isolated recovery, security and OS checks"
+	@echo "  make test-zsh       Zsh syntax checks"
+	@echo "  make test-vim       Isolated Vim configuration check"
+	@echo "  make test-scripts   Shell script syntax checks"
 	@echo "  make lint           Lint shell scripts"
-	@echo "  make clean          Clean up backup directories and logs"
+	@echo "  make security       Redacted working-tree secret scan"
+	@echo "  make clean          List log cleanup candidates without deleting"
 	@echo "  make dev-setup      Install development tools"
 	@echo "  make git-hooks      Setup git pre-commit hooks"
 	@echo ""
 	@echo "$(GREEN)Maintenance:$(NC)"
 	@echo "  make backup         Create backup of current configs"
-	@echo "  make restore        Restore from most recent backup"
+	@echo "  make restore BACKUP=/path [CONFIRM=yes]  Preview or restore an explicit backup"
 	@echo "  make doctor         Check system health and dependencies"
 	@echo "  make plugins        Update ZSH plugins"
 	@echo "  make fonts          Install Agave Nerd Font"
@@ -77,11 +82,12 @@ help:
 	@echo "  make mcp-atlassian-test    Run Atlassian MCP server"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
+	@echo "  make help           Show this help (the default target)"
 	@echo "  make status         Show .dotfiles status"
 	@echo "  make deps           Show dependencies"
 	@echo "  make docs           Generate system info documentation"
 	@echo "  make list           Show all available targets"
-	@echo "  make perf           Run performance tests"
+	@echo "  make perf           Report unavailable isolated performance benchmark"
 
 ## Install .dotfiles (full setup)
 install:
@@ -110,79 +116,38 @@ packages:
 	@./scripts/install-packages.sh
 
 ## Test configuration files
-test: test-zsh test-vim test-scripts test-integration
+test:
+	@bash scripts/test-dotfiles.sh
 
 ## Run comprehensive tests
 test-all:
-	@./scripts/test-dotfiles.sh
+	@bash scripts/test-dotfiles.sh
 
 ## Run quick tests only
 test-quick:
-	@./scripts/test-dotfiles.sh --quick
+	@bash scripts/test-dotfiles.sh --quick
 
 test-integration:
 	@echo "$(GREEN)Running integration tests...$(NC)"
-	@./scripts/test-dotfiles.sh --integration
+	@bash scripts/test-dotfiles.sh --integration
 
 test-zsh:
-	@echo "$(GREEN)Testing ZSH configuration...$(NC)"
-	@if [ -f config/zsh/os-detection.zsh ]; then \
-		zsh -n config/zsh/os-detection.zsh && echo "✅ ZSH OS detection syntax OK" || echo "❌ ZSH OS detection syntax error"; \
-	fi
-	@if [ -f config/zsh/aliases.zsh ]; then \
-		zsh -n config/zsh/aliases.zsh && echo "✅ ZSH aliases syntax OK" || echo "❌ ZSH aliases syntax error"; \
-	fi
-	@if [ -f config/zsh/functions.zsh ]; then \
-		zsh -n config/zsh/functions.zsh && echo "✅ ZSH functions syntax OK" || echo "❌ ZSH functions syntax error"; \
-	fi
-	@if [ -f config/zsh/exports.zsh ]; then \
-		zsh -n config/zsh/exports.zsh && echo "✅ ZSH exports syntax OK" || echo "❌ ZSH exports syntax error"; \
-	fi
-	@if [ -f config/zsh/prompt.zsh ]; then \
-		zsh -n config/zsh/prompt.zsh && echo "✅ ZSH prompt syntax OK" || echo "❌ ZSH prompt syntax error"; \
-	fi
-	@if [ -f config/zsh/plugins.zsh ]; then \
-		zsh -n config/zsh/plugins.zsh && echo "✅ ZSH plugins syntax OK" || echo "❌ ZSH plugins syntax error"; \
-	fi
+	@bash scripts/test-dotfiles.sh --zsh
 
 test-vim:
-	@echo "$(GREEN)Testing Vim configuration...$(NC)"
-	@if [ -f config/vim/vimrc ]; then \
-		vim -e -T dumb --cmd 'try | source config/vim/vimrc | catch | cquit | endtry' +qall && \
-		echo "✅ Vim config OK" || echo "❌ Vim config error"; \
-	fi
+	@bash scripts/test-dotfiles.sh --vim
 
 test-scripts:
-	@echo "$(GREEN)Testing shell scripts...$(NC)"
-	@for script in install.sh scripts/*.sh; do \
-		if [ -f "$$script" ]; then \
-			bash -n "$$script" && echo "✅ $$script syntax OK" || echo "❌ $$script syntax error"; \
-		fi; \
-	done
+	@bash scripts/test-dotfiles.sh --scripts
 
 ## Lint shell scripts
 lint:
-	@echo "$(GREEN)Linting shell scripts...$(NC)"
-	@if command -v shellcheck >/dev/null 2>&1; then \
-		find . -name "*.sh" -exec shellcheck {} + && echo "✅ Shellcheck passed"; \
-	else \
-		echo "$(YELLOW)Warning: shellcheck not installed$(NC)"; \
-		echo "Install with:"; \
-		if [ "$(OS)" = "darwin" ]; then \
-			echo "  brew install shellcheck"; \
-		elif [ "$(DISTRO)" = "ubuntu" ]; then \
-			echo "  sudo apt install shellcheck"; \
-		elif [ "$(DISTRO)" = "fedora" ]; then \
-			echo "  sudo dnf install shellcheck"; \
-		elif [ "$(DISTRO)" = "arch" ]; then \
-			echo "  sudo pacman -S shellcheck"; \
-		fi; \
-	fi
+	@bash scripts/test-dotfiles.sh --lint
 
 ## Run security audit
 security:
 	@echo "$(GREEN)Running security audit...$(NC)"
-	@./scripts/security-audit.sh
+	@bash scripts/security-audit.sh
 
 ## Seed Atlassian MCP tokens into macOS Keychain
 mcp-atlassian-setup:
@@ -196,34 +161,19 @@ mcp-atlassian-migrate:
 mcp-atlassian-test:
 	@mcpm run atlassian
 
-## Clean up backup directories and logs
+## List log cleanup candidates without deleting
 clean:
-	@echo "$(GREEN)Cleaning up...$(NC)"
-	@find $(HOME) -name ".dotfiles-backup-*" -type d -mtime +30 -print0 2>/dev/null | xargs -0 rm -rf
-	@rm -f install.log logs/*.log
-	@echo "✅ Cleaned old backups and logs"
+	@echo "Backups are retained. Review and remove individual backups explicitly."
+	@echo "Repository log candidates (no deletion performed):"
+	@find . -maxdepth 2 -type f -name '*.log' -print
 
 ## Create backup of current configs
 backup:
-	@echo "$(GREEN)Creating backup...$(NC)"
-	@mkdir -p $(BACKUP_DIR)
-	@if [ -f $(HOME)/.zshrc ]; then cp $(HOME)/.zshrc $(BACKUP_DIR)/; fi
-	@if [ -f $(HOME)/.gitconfig ]; then cp $(HOME)/.gitconfig $(BACKUP_DIR)/; fi
-	@if [ -f $(HOME)/.vimrc ]; then cp $(HOME)/.vimrc $(BACKUP_DIR)/; fi
-	@if [ -d $(HOME)/.config/zsh ]; then cp -r $(HOME)/.config/zsh $(BACKUP_DIR)/; fi
-	@echo "✅ Backup created at $(BACKUP_DIR)"
+	@bash scripts/backup-dotfiles.sh
 
-## Restore from most recent backup
+## Preview an explicit backup; restore only with CONFIRM=yes
 restore:
-	@echo "$(GREEN)Restoring from backup...$(NC)"
-	@LATEST_BACKUP=$$(ls -dt $(HOME)/.dotfiles-backup-* 2>/dev/null | head -n1); \
-	if [ -n "$$LATEST_BACKUP" ]; then \
-		echo "Restoring from $$LATEST_BACKUP"; \
-		cp -r $$LATEST_BACKUP/* $(HOME)/; \
-		echo "✅ Restored from backup"; \
-	else \
-		echo "❌ No backup found"; \
-	fi
+	@bash scripts/restore-dotfiles.sh --backup "$(BACKUP)" $(if $(filter yes,$(CONFIRM)),--yes,--dry-run)
 
 ## Check system health and dependencies
 doctor:
@@ -251,33 +201,21 @@ doctor:
 				echo "$(YELLOW)⚪ Could not detect login shell; run: chsh -s $$(command -v zsh)$(NC)" ;; \
 			*) \
 				echo "$(RED)❌ Default shell is $$__login_shell, expected zsh$(NC)"; \
-				echo "$(YELLOW)Setting zsh as the default shell...$(NC)"; \
-				__zsh_path="$$(command -v zsh)"; \
-				if [ "$(OS)" = "linux" ] && ! grep -q "^$$__zsh_path$$" /etc/shells 2>/dev/null; then \
-					if command -v sudo >/dev/null 2>&1; then \
-						echo "$$__zsh_path" | sudo tee -a /etc/shells >/dev/null || \
-							echo "$(RED)❌ Could not add zsh to /etc/shells; run: echo $$__zsh_path | sudo tee -a /etc/shells$(NC)"; \
-					fi; \
-				fi; \
-				if chsh -s "$$__zsh_path" 2>/dev/null; then \
-					echo "$(GREEN)✅ zsh set as default shell (restart terminal to apply)$(NC)"; \
-				else \
-					echo "$(RED)❌ Could not change shell automatically; run: chsh -s $$__zsh_path$(NC)"; \
-				fi ;; \
+				echo "To change it explicitly, run: chsh -s $$(command -v zsh)"; exit 1 ;; \
 		esac; \
 	else \
-		echo "$(YELLOW)⚪ zsh is not installed$(NC)"; \
+		echo "$(RED)❌ zsh is not installed$(NC)"; exit 1; \
 	fi
 	@echo "Package Manager: $(PACKAGE_MANAGER)"
 	@echo ""
 	@echo "$(YELLOW)Required Tools:$(NC)"
-	@for cmd in git zsh vim curl; do \
+	@failed=0; for cmd in git zsh vim curl; do \
 		if command -v $$cmd >/dev/null 2>&1; then \
 			echo "✅ $$cmd: $$(command -v $$cmd)"; \
 		else \
-			echo "❌ $$cmd: not found"; \
+			echo "❌ $$cmd: not found"; failed=1; \
 		fi; \
-	done
+	done; exit $$failed
 	@echo ""
 	@echo "$(YELLOW)Modern CLI Tools:$(NC)"
 	@for cmd in bat eza fd fzf rg jq gh; do \
@@ -296,8 +234,8 @@ doctor:
 	@for cmd in nvm pyenv rbenv rustup; do \
 		if command -v $$cmd >/dev/null 2>&1; then \
 			echo "✅ $$cmd: $$(command -v $$cmd)"; \
-		elif [ "$$cmd" = "nvm" ] && [ -d "$$HOME/.nvm" ]; then \
-			echo "✅ nvm: $$HOME/.nvm"; \
+		elif [ "$$cmd" = "nvm" ] && [ -f "$${NVM_DIR:-$$HOME/.nvm}/nvm.sh" ]; then \
+			echo "✅ nvm: $${NVM_DIR:-$$HOME/.nvm}"; \
 		else \
 			echo "⚪ $$cmd: not installed"; \
 		fi; \
@@ -311,37 +249,45 @@ status:
 	@echo "$(GREEN).dotfiles Status:$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Symlinks:$(NC)"
-	@for link in \
+	@failed=0; for link in \
 		"$(HOME)/.config/zsh:$(DOTFILES_DIR)/config/zsh" \
 		"$(HOME)/.zshrc:$(DOTFILES_DIR)/config/zsh/.zshrc" \
+		"$(HOME)/.zshenv:$(DOTFILES_DIR)/config/zsh/.zshenv" \
+		"$(HOME)/.zprofile:$(DOTFILES_DIR)/config/zsh/.zprofile" \
 		"$(HOME)/.gitconfig:$(DOTFILES_DIR)/config/git/gitconfig" \
+		"$(HOME)/.config/git:$(DOTFILES_DIR)/config/git" \
+		"$(HOME)/.config/mcpm/servers.json:$(DOTFILES_DIR)/config/mcpm/servers.json" \
+		"$(HOME)/.local/bin/mcpm-atlassian-secure:$(DOTFILES_DIR)/scripts/mcpm-atlassian-secure.sh" \
 		"$(HOME)/.vimrc:$(DOTFILES_DIR)/config/vim/vimrc" \
 		"$(HOME)/.config/nvim:$(DOTFILES_DIR)/config/nvim" \
 	; do \
 		target="$${link%%:*}"; \
 		source="$${link##*:}"; \
-		if [ -L "$$target" ] && [ "$$(readlink "$$target")" = "$$source" ]; then \
+		if [ -L "$$target" ] && [ -e "$$target" ] && [ "$$(readlink "$$target")" = "$$source" ]; then \
 			echo "✅ $$target → $$source"; \
-		elif [ -e "$$target" ]; then \
-			echo "⚠️  $$target exists but is not linked"; \
+		elif [ -e "$$target" ] || [ -L "$$target" ]; then \
+			echo "❌ $$target is not a valid link to $$source"; failed=1; \
 		else \
-			echo "❌ $$target not found"; \
+			echo "❌ $$target not found"; failed=1; \
 		fi; \
-	done
+	done; exit $$failed
 	@echo ""
 	@echo "$(YELLOW)Git Repository:$(NC)"
-	@if [ -d .git ]; then \
-		echo "Branch: $$(git branch --show-current 2>/dev/null || echo 'detached HEAD')"; \
-		if git remote | grep -q origin 2>/dev/null; then \
-			echo "Remote: $$(git remote get-url origin)"; \
+	@set -eu; \
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		branch=$$(git branch --show-current); \
+		echo "Branch: $${branch:-detached HEAD}"; \
+		if remote=$$(git remote get-url origin 2>/dev/null); then \
+			echo "Remote: $$remote"; \
 		else \
 			echo "Remote: No remote configured"; \
 		fi; \
 		echo ""; \
 		echo "$(YELLOW)Working Tree Status:$(NC)"; \
-		if git status --porcelain | grep -q .; then \
-			git status --porcelain | head -5; \
-			file_count=$$(git status --porcelain | wc -l); \
+		working_tree=$$(git --no-optional-locks status --porcelain); \
+		if [ -n "$$working_tree" ]; then \
+			printf '%s\n' "$$working_tree" | head -5; \
+			file_count=$$(printf '%s\n' "$$working_tree" | wc -l); \
 			if [ "$$file_count" -gt 5 ]; then \
 				remaining=$$(( $$file_count - 5 )); \
 				echo "... and $$remaining more files"; \
@@ -350,56 +296,52 @@ status:
 			echo "✅ Working tree is clean"; \
 		fi; \
 	else \
-		echo "❌ Not a git repository"; \
+		echo "❌ Not a git repository"; exit 1; \
 	fi
 
 ## Install Nerd Fonts (Agave Nerd Font)
 fonts:
 	@echo "$(GREEN)Installing Agave Nerd Font...$(NC)"
-	@if [ "$(OS_NAME)" = "macOS" ]; then \
-		if command -v brew >/dev/null 2>&1; then \
-			echo "Installing Agave Nerd Font via Homebrew..."; \
-			brew install --cask font-agave-nerd-font; \
-			echo "$(YELLOW)✅ Agave Nerd Font installed via Homebrew$(NC)"; \
-			echo "$(YELLOW)📝 To set in Terminal: Terminal > Preferences > Profiles > Text > Change Font$(NC)"; \
-			echo "$(YELLOW)📝 To set in iTerm2: iTerm2 > Preferences > Profiles > Text > Change Font$(NC)"; \
-			echo "$(YELLOW)📝 Font name: 'AgaveNerdFont-Regular' or 'Agave Nerd Font'$(NC)"; \
-		else \
-			echo "$(YELLOW)Homebrew not found. Installing manually...$(NC)"; \
-			echo "Downloading Agave Nerd Font..."; \
-			curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
-			mkdir -p $$HOME/Library/Fonts; \
-			unzip -o /tmp/Agave.zip -d /tmp/AgaveNerdFont; \
-			mv /tmp/AgaveNerdFont/*.ttf $$HOME/Library/Fonts/ 2>/dev/null || true; \
-			rm -rf /tmp/Agave.zip /tmp/AgaveNerdFont; \
-			echo "$(YELLOW)✅ Agave Nerd Font installed manually$(NC)"; \
-		fi; \
-	elif [ "$(OS_NAME)" = "Linux" ]; then \
-		echo "Downloading Agave Nerd Font..."; \
-		curl -L -o /tmp/Agave.zip https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
-		mkdir -p $$HOME/.local/share/fonts; \
-		unzip -o /tmp/Agave.zip -d $$HOME/.local/share/fonts/AgaveNerdFont; \
-		fc-cache -fv; \
-		rm -f /tmp/Agave.zip; \
-		echo "$(YELLOW)✅ Agave Nerd Font installed$(NC)"; \
-		echo "$(YELLOW)📝 Set your terminal font to 'Agave Nerd Font' in preferences$(NC)"; \
+	@set -eu; \
+	if [ "$(OS)" = darwin ] && command -v brew >/dev/null 2>&1; then \
+		brew install --cask font-agave-nerd-font; \
 	else \
-		echo "$(YELLOW)Please manually install Agave Nerd Font from https://www.nerdfonts.com/font-downloads$(NC)"; \
-	fi
+		case "$(OS)" in \
+			darwin) destination="$$HOME/Library/Fonts" ;; \
+			linux) destination="$${XDG_DATA_HOME:-$$HOME/.local/share}/fonts/AgaveNerdFont"; command -v fc-cache >/dev/null ;; \
+			*) echo "Unsupported OS: $(OS)" >&2; exit 1 ;; \
+		esac; \
+		command -v curl >/dev/null; command -v unzip >/dev/null; \
+		umask 077; temporary=$$(mktemp -d "$${TMPDIR:-/tmp}/dotfiles-fonts.XXXXXX"); \
+		trap 'rm -rf "$$temporary"' EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; \
+		curl -fL --retry 2 -o "$$temporary/Agave.zip" https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Agave.zip; \
+		unzip -oq "$$temporary/Agave.zip" '*.ttf' -d "$$temporary/fonts"; \
+		set -- "$$temporary/fonts/"*.ttf; [ -f "$$1" ]; \
+		mkdir -p "$$destination"; cp "$$@" "$$destination/"; \
+		if [ "$(OS)" = linux ]; then fc-cache -f "$$destination"; fi; \
+	fi; \
+	echo "Agave Nerd Font installed; select it in your terminal preferences."
 
 ## Update ZSH plugins
 plugins:
 	@echo "$(GREEN)Updating ZSH plugins...$(NC)"
 	@if [ -d "$(HOME)/.local/share/zsh/plugins" ]; then \
-		for plugin in $(HOME)/.local/share/zsh/plugins/*; do \
+		failed=0; \
+		for plugin in "$(HOME)/.local/share/zsh/plugins"/*; do \
 			if [ -d "$$plugin/.git" ]; then \
 				plugin_name=$$(basename "$$plugin"); \
 				echo "Updating $$plugin_name..."; \
-				(cd "$$plugin" && git pull --quiet) && echo "✅ $$plugin_name updated" || echo "❌ $$plugin_name failed"; \
+				if (cd "$$plugin" && git pull --quiet); then \
+					echo "✅ $$plugin_name updated"; \
+				else \
+					echo "❌ $$plugin_name failed"; failed=1; \
+				fi; \
 			fi; \
 		done; \
+		exit $$failed; \
 	else \
 		echo "❌ No plugins directory found. Run 'make install' first."; \
+		exit 1; \
 	fi
 
 ## Show dependencies
@@ -412,14 +354,19 @@ deps:
 	@echo "  vim       - Text editor"
 	@echo "  curl      - Download tool"
 	@echo ""
+	@echo "$(YELLOW)Validation and Hooks:$(NC)"
+	@echo "  make, bash, zsh, vim, git, jq, ripgrep, shellcheck - offline tests"
+	@echo "  pre-commit - optional hooks (also downloads hook environments)"
+	@echo "  mcpm, uvx, jq, zsh, macOS Keychain - Atlassian targets"
+	@echo ""
 	@echo "$(YELLOW)Package Manager Specific:$(NC)"
 	@if [ "$(OS)" = "darwin" ]; then \
 		echo "  brew      - Package manager (Homebrew)"; \
-	elif [ "$(DISTRO)" = "ubuntu" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "apt" ]; then \
 		echo "  apt       - Package manager"; \
-	elif [ "$(DISTRO)" = "fedora" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "dnf" ]; then \
 		echo "  dnf       - Package manager"; \
-	elif [ "$(DISTRO)" = "arch" ]; then \
+	elif [ "$(PACKAGE_MANAGER)" = "pacman" ]; then \
 		echo "  pacman    - Package manager"; \
 	fi
 	@echo ""
@@ -444,67 +391,45 @@ deps:
 ## Generate system documentation
 docs:
 	@echo "$(GREEN)Generating system documentation...$(NC)"
-	@echo "# System Information" > SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "Generated on $$(date) for $(OS_NAME)" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## System Details" >> SYSTEM_INFO.md
-	@echo "- OS: $(OS_NAME)" >> SYSTEM_INFO.md
-	@echo "- Architecture: $(ARCH)" >> SYSTEM_INFO.md
-	@if [ "$(OS)" = "linux" ]; then \
-		echo "- Distribution: $(DISTRO)" >> SYSTEM_INFO.md; \
-	fi
-	@echo "- Package Manager: $(PACKAGE_MANAGER)" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## XDG Base Directory Specification" >> SYSTEM_INFO.md
-	@echo "- XDG_CONFIG_HOME: $${XDG_CONFIG_HOME:-$$HOME/.config}" >> SYSTEM_INFO.md
-	@echo "- XDG_DATA_HOME: $${XDG_DATA_HOME:-$$HOME/.local/share}" >> SYSTEM_INFO.md
-	@echo "- XDG_CACHE_HOME: $${XDG_CACHE_HOME:-$$HOME/.cache}" >> SYSTEM_INFO.md
-	@echo "- XDG_STATE_HOME: $${XDG_STATE_HOME:-$$HOME/.local/state}" >> SYSTEM_INFO.md
-	@echo "" >> SYSTEM_INFO.md
-	@echo "## Configuration Files" >> SYSTEM_INFO.md
-	@find config -name "*.zsh" -o -name "*.vim" -o -name "gitconfig" 2>/dev/null | while read file; do \
-		echo "- $$file" >> SYSTEM_INFO.md; \
-	done
+	@set -eu; umask 077; \
+	[ ! -L SYSTEM_INFO.md ] && [ ! -d SYSTEM_INFO.md ] || { echo "Refusing linked/directory SYSTEM_INFO.md" >&2; exit 1; }; \
+	temporary=$$(mktemp ./SYSTEM_INFO.md.XXXXXX); \
+	trap 'rm -f "$$temporary"' EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; \
+	{ \
+		printf '# System Information\n\nGenerated on %s for %s\n\n' "$$(date)" "$(OS_NAME)"; \
+		printf '## System Details\n- OS: %s\n- Architecture: %s\n' "$(OS_NAME)" "$(ARCH)"; \
+		if [ "$(OS)" = linux ]; then printf '%s\n' "- Distribution: $(DISTRO)"; fi; \
+		printf '%s\n' "- Package Manager: $(PACKAGE_MANAGER)" "" "## XDG Base Directory Specification" \
+			"- XDG_CONFIG_HOME: $${XDG_CONFIG_HOME:-$$HOME/.config}" \
+			"- XDG_DATA_HOME: $${XDG_DATA_HOME:-$$HOME/.local/share}" \
+			"- XDG_CACHE_HOME: $${XDG_CACHE_HOME:-$$HOME/.cache}" \
+			"- XDG_STATE_HOME: $${XDG_STATE_HOME:-$$HOME/.local/state}" "" "## Configuration Files"; \
+		find config -type f \( -name '*.zsh' -o -name '*.vim' -o -name '.zsh*' -o -name '.zprofile' -o -name 'vimrc' -o -name 'gitconfig*' \) -exec printf -- '- %s\n' {} +; \
+	} > "$$temporary"; \
+	mv -f "$$temporary" SYSTEM_INFO.md
 	@echo "✅ System documentation generated as SYSTEM_INFO.md"
 
 ## Install development tools
 dev-setup:
 	@echo "$(GREEN)Setting up development environment for $(OS_NAME)...$(NC)"
-	@if [ "$(OS)" = "darwin" ] && command -v brew >/dev/null 2>&1; then \
-		brew install shellcheck pre-commit; \
-	elif [ "$(DISTRO)" = "ubuntu" ]; then \
-		sudo apt install -y shellcheck; \
-	elif [ "$(DISTRO)" = "fedora" ]; then \
-		sudo dnf install -y shellcheck; \
-	elif [ "$(DISTRO)" = "arch" ]; then \
-		sudo pacman -S shellcheck; \
-	fi
-	@if command -v npm >/dev/null 2>&1; then \
-		npm install -g markdownlint-cli; \
-	fi
+	@set -eu; \
+	case "$(PACKAGE_MANAGER)" in \
+		brew) brew install make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		apt) sudo apt update; sudo apt install -y make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		dnf) sudo dnf install -y make bash zsh vim git jq ripgrep ShellCheck pre-commit ;; \
+		pacman) sudo pacman -Syu --needed make bash zsh vim git jq ripgrep shellcheck pre-commit ;; \
+		*) echo "Unsupported development setup: $(OS)/$(DISTRO)" >&2; exit 1 ;; \
+	esac
 	@echo "✅ Development tools installed"
 
 ## Setup git hooks
 git-hooks:
-	@echo "$(GREEN)Setting up git hooks...$(NC)"
-	@if [ -d .git ]; then \
-		echo '#!/bin/bash' > .git/hooks/pre-commit; \
-		echo 'make test' >> .git/hooks/pre-commit; \
-		chmod +x .git/hooks/pre-commit; \
-		echo "✅ Pre-commit hook installed"; \
-	else \
-		echo "❌ Not a git repository"; \
-	fi
+	@bash scripts/setup-pre-commit.sh
 
 ## Performance test
 perf:
-	@echo "$(GREEN)Running performance tests...$(NC)"
-	@echo "ZSH startup time (5 runs):"
-	@for i in 1 2 3 4 5; do \
-		(time zsh -i -c exit) 2>&1 | grep real; \
-	done
+	@bash scripts/test-dotfiles.sh --performance
 
-## Show make targets (alternative help)  
+## Show make targets (alternative help)
 list:
-	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | cut -d: -f1 | sort | uniq
+	@awk '/^[a-zA-Z_-]+:/ { sub(/:.*/, ""); print }' Makefile | sort -u

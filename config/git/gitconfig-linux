@@ -4,9 +4,6 @@
 	# Alternative for GUI systems: helper = libsecret
 
 # Linux-specific settings
-[core]
-	excludesfile = ~/.config/git/gitignore-linux
-
 [diff]
 	tool = vimdiff
 
