@@ -36,6 +36,7 @@ filetype plugin on
 syntax on
 
 " Plugin management (vim-plug)
+if !empty(globpath(&runtimepath, 'autoload/plug.vim'))
 call plug#begin('~/.local/share/nvim/plugged')
 Plug 'nvim-tree/nvim-tree.lua'
 Plug 'nvim-tree/nvim-web-devicons'
@@ -46,6 +47,7 @@ Plug 'folke/which-key.nvim'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 call plug#end()
+endif
 
 " Colorscheme
 try
@@ -76,14 +78,19 @@ augroup END
 
 " Lua plugin setup
 lua << EOF
-require('nvim-tree').setup {}
-require('gitsigns').setup {}
-require('nvim-autopairs').setup {}
-require('which-key').setup {}
-require('nvim-treesitter.configs').setup {
+local function setup(module)
+  local available, plugin = pcall(require, module)
+  if available then plugin.setup {} end
+end
+setup('nvim-tree')
+setup('gitsigns')
+setup('nvim-autopairs')
+setup('which-key')
+local available, treesitter = pcall(require, 'nvim-treesitter.configs')
+if available then treesitter.setup {
   ensure_installed = { "lua", "vim", "python", "javascript", "typescript" },
   highlight = { enable = true },
-}
+} end
 EOF
 
 " Key mappings for nvim-tree

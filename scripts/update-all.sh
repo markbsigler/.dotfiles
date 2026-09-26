@@ -304,7 +304,10 @@ update_vim_plugins() {
     if command_exists nvim && [[ -f "$HOME/.config/nvim/init.vim" ]]; then
         info "Updating Neovim plugins..."
         if [[ "$DRY_RUN" == false ]]; then
-            nvim +PlugUpdate +qall 2>/dev/null || warning "Neovim plugin update failed"
+            if ! nvim +PlugUpdate +qall 2>/dev/null; then
+                warning "Neovim plugin update failed"
+                return 1
+            fi
             success "Neovim plugins updated"
         else
             info "DRY RUN: Would run 'nvim +PlugUpdate +qall'"
@@ -312,7 +315,10 @@ update_vim_plugins() {
     elif command_exists vim && [[ -f "$HOME/.vimrc" ]]; then
         info "Updating Vim plugins..."
         if [[ "$DRY_RUN" == false ]]; then
-            vim +PlugUpdate +qall 2>/dev/null || warning "Vim plugin update failed"
+            if ! vim +PlugUpdate +qall 2>/dev/null; then
+                warning "Vim plugin update failed"
+                return 1
+            fi
             success "Vim plugins updated"
         else
             info "DRY RUN: Would run 'vim +PlugUpdate +qall'"
@@ -331,6 +337,7 @@ update_version_managers() {
     fi
     
     section "Version Managers Update"
+    local failed=0
     
     # Update NVM
     if [[ -d "$HOME/.nvm" ]]; then
@@ -340,6 +347,7 @@ update_version_managers() {
                 success "NVM updated"
             else
                 warning "NVM update failed"
+                failed=1
             fi
         else
             info "DRY RUN: Would update NVM"
@@ -354,6 +362,7 @@ update_version_managers() {
                 success "pyenv updated"
             else
                 warning "pyenv update failed"
+                failed=1
             fi
         else
             info "DRY RUN: Would update pyenv"
@@ -368,12 +377,14 @@ update_version_managers() {
                 success "rbenv updated"
             else
                 warning "rbenv update failed"
+                failed=1
             fi
             if [[ -d "$HOME/.rbenv/plugins/ruby-build" ]]; then
                 if (cd "$HOME/.rbenv/plugins/ruby-build" && git pull --quiet); then
                     success "ruby-build updated"
                 else
                     warning "ruby-build update failed"
+                    failed=1
                 fi
             fi
         else
@@ -387,12 +398,16 @@ update_version_managers() {
         if [[ "$DRY_RUN" == false ]]; then
             if rustup update; then
                 success "Rust updated"
+            else
+                warning "Rust update failed"
+                failed=1
             fi
         else
             info "DRY RUN: Would run 'rustup update'"
         fi
     fi
     echo
+    return "$failed"
 }
 
 # Update dotfiles repository
@@ -409,6 +424,7 @@ update_dotfiles() {
                     success "Dotfiles updated"
                 else
                     warning "Dotfiles update failed"
+                    return 1
                 fi
             else
                 info "DRY RUN: Would run 'git pull' in $DOTFILES_DIR"
@@ -437,11 +453,16 @@ main() {
     fi
     echo
     
-    update_system
-    update_zsh_plugins
-    update_vim_plugins
-    update_version_managers
-    update_dotfiles
+    local failed=0
+    update_system || failed=1
+    update_zsh_plugins || failed=1
+    update_vim_plugins || failed=1
+    update_version_managers || failed=1
+    update_dotfiles || failed=1
+    if [[ "$failed" -ne 0 ]]; then
+        error "One or more updates failed"
+        return 1
+    fi
     
     section "Update Complete!"
     success "All updates finished"
@@ -452,6 +473,4 @@ main() {
 
 # Run main function
 main
-
-exit 0
 

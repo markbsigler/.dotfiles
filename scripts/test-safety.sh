@@ -207,6 +207,18 @@ test_installer_dry_run_option() {
     assert_unchanged "$FIXTURE" run_script "$FIXTURE_REPO/install.sh" --dry-run "$1"
 }
 
+test_installer_test_only() {
+    local option="$1" result=0
+    populate_home
+    printf '#!/bin/sh\nprintf "suite invoked\\n"\nexit %s\n' "$2" > "$FIXTURE_REPO/scripts/test-dotfiles.sh"
+    tree_snapshot "$FIXTURE" > "$CASE_DIR/before"
+    run_script "$FIXTURE_REPO/install.sh" "$option" > "$CASE_DIR/test-output" || result=$?
+    [[ "$result" -eq "$2" ]] || fail "Installer did not propagate test exit $2"
+    grep -Fx 'suite invoked' "$CASE_DIR/test-output" >/dev/null || fail 'Installer did not run the suite'
+    tree_snapshot "$FIXTURE" > "$CASE_DIR/after"
+    assert_snapshots_equal "$CASE_DIR/before" "$CASE_DIR/after" 'test-only installer'
+}
+
 test_update_entrypoint() {
     local scenario="$1" link source target relative old_target index=0 backup
     local links=(
@@ -500,7 +512,7 @@ test_zshenv() {
                 ;;
             *) exit 99 ;;
         esac
-        expected_zdotdir="${ZDOTDIR:-$expected_config/zsh}"
+        expected_zdotdir="${ZDOTDIR:-$HOME/.config/zsh}"
         export ZPROFILE_LOADED=1 ZSHRC_LOADED=1
         source "$1"
         [[ "$ZDOTDIR" == "$expected_zdotdir" ]]
@@ -509,6 +521,25 @@ test_zshenv() {
         [[ "$HISTFILE" == "$expected_data/zsh/history" ]]
         [[ -z "${ZPROFILE_LOADED+x}" && -z "${ZSHRC_LOADED+x}" ]]
     ' safety-zshenv "$FIXTURE_REPO/config/zsh/.zshenv" "$1"
+}
+
+test_shell_functions() {
+    mkdir -p "$HOME/bookmark target"
+    printf 'sample:%s\n' "$HOME/bookmark target" > "$HOME/.bookmarks"
+    printf '%s\n' '[[ -n "$ZSHRC_LOADED" ]] && return' 'ZSHRC_LOADED=1' 'RELOAD_COUNT=$((RELOAD_COUNT + 1))' > "$HOME/.zshrc"
+    run_zsh -c '
+        PATH=/usr/bin:/bin
+        source "$1"
+        original_path="$PATH"
+        clean_bookmarks >/dev/null
+        [[ "$PATH" == "$original_path" ]] || exit 1
+        (( $+functions[go] == 0 && $+functions[bookmark_go] == 1 )) || exit 1
+        bookmark_go sample || exit 1
+        [[ "$PWD" == "$HOME/bookmark target" ]] || exit 1
+        ZSHRC_LOADED=1 RELOAD_COUNT=0
+        reload_zshrc >/dev/null
+        [[ "$RELOAD_COUNT" == 1 ]]
+    ' shell-functions "$REPO_DIR/config/zsh/functions.zsh"
 }
 
 test_plugins() {
@@ -555,6 +586,28 @@ test_plugin_updates() {
         updater-failure)
             printf '#!/bin/sh\nexit 19\n' > "$STUB_BIN/git"
             expect_failure run_script "$FIXTURE_REPO/scripts/update-all.sh" --skip-system --skip-vim --skip-vms
+            ;;
+        updater-vim-failure|updater-vms-failure|updater-repo-failure)
+            local output result=0
+            case "$scenario" in
+                updater-vim-failure)
+                    mkdir -p "$HOME/.config/nvim"
+                    : > "$HOME/.config/nvim/init.vim"
+                    printf '#!/bin/sh\nexit 19\n' > "$STUB_BIN/nvim"
+                    output=$(run_script "$FIXTURE_REPO/scripts/update-all.sh" --skip-system --skip-plugins --skip-vms) || result=$?
+                    ;;
+                updater-vms-failure)
+                    mkdir -p "$HOME/.nvm"
+                    printf '#!/bin/sh\nexit 19\n' > "$STUB_BIN/git"
+                    output=$(run_script "$FIXTURE_REPO/scripts/update-all.sh" --skip-system --skip-plugins --skip-vim) || result=$?
+                    ;;
+                updater-repo-failure)
+                    mkdir -p "$HOME/.dotfiles/.git"
+                    printf '#!/bin/sh\nif [ "$3" = remote ]; then echo origin; exit 0; fi\nexit 19\n' > "$STUB_BIN/git"
+                    output=$(run_script "$FIXTURE_REPO/scripts/update-all.sh" --skip-system --skip-plugins --skip-vim --skip-vms) || result=$?
+                    ;;
+            esac
+            [[ "$result" -ne 0 && "$output" != *'All updates finished'* ]] || fail "$scenario masked an update failure"
             ;;
         make-success|make-failure)
             local git_result=0 result=0
@@ -1134,6 +1187,10 @@ done
 for option in --skip-packages -s --test -t; do
     run_case "installer dry-run accepts $option without execution" test_installer_dry_run_option "$option"
 done
+for option in --test -t; do
+    run_case "installer $option runs only tests" test_installer_test_only "$option" 0
+    run_case "installer $option propagates test failure" test_installer_test_only "$option" 37
+done
 for scenario in empty real-file real-directory current stale dangling mixed; do
     run_case "installer --update: $scenario destinations" test_update_entrypoint "$scenario"
 done
@@ -1161,12 +1218,13 @@ run_case 'update preserves real directory' test_update_preserves_directory
 for scenario in default explicit xdg; do
     run_case "zshenv preserves $scenario paths without writes" test_zshenv "$scenario"
 done
+run_case 'bookmark and reload functions preserve PATH and run' test_shell_functions
 for platform in macos linux; do
     for scenario in missing empty fallback standard; do
         run_case "plugins: $platform $scenario without network or writes" test_plugins "$scenario" "$platform"
     done
 done
-for scenario in updater-dry updater-failure make-success make-failure; do
+for scenario in updater-dry updater-failure updater-vim-failure updater-vms-failure updater-repo-failure make-success make-failure; do
     run_case "plugin maintenance: $scenario with isolated commands" test_plugin_updates "$scenario"
 done
 while IFS='|' read -r target command_name argument; do

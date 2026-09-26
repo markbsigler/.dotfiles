@@ -203,7 +203,7 @@ The configuration includes aliases and integration for:
 ## Customization
 
 ### Machine-Specific Settings
-Edit `~/.config/zsh/local.zsh` for machine-specific customizations:
+Edit `~/.dotfiles/local/local.zsh` for machine-specific customizations:
 
 ```bash
 # Add custom PATH

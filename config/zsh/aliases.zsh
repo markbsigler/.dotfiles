@@ -49,12 +49,8 @@ elif command -v batcat &> /dev/null; then
     alias ccat="batcat --style=plain"
 fi
 
-# Better find
-if command -v fd &> /dev/null; then
-    alias find="fd"
-elif command -v fdfind &> /dev/null; then
-    # Ubuntu package name
-    alias find="fdfind"
+# fd may be installed as fdfind on Debian/Ubuntu
+if ! command -v fd &> /dev/null && command -v fdfind &> /dev/null; then
     alias fd="fdfind"
 fi
 
@@ -63,15 +59,7 @@ if command -v dust &> /dev/null; then
     alias du="dust"
 fi
 
-# Better grep
-if command -v rg &> /dev/null; then
-    alias grep="rg"
-    alias rgrep="rg"
-else
-    alias grep="grep --color=auto"
-    alias fgrep="fgrep --color=auto"
-    alias egrep="egrep --color=auto"
-fi
+# Leave grep's options and exit status intact for shell helpers.
 
 # Common commands
 alias h="history"
@@ -154,7 +142,7 @@ alias yaml2json="python3 -c 'import sys, yaml, json; json.dump(yaml.safe_load(sy
 
 # Quick file editing
 alias vimrc="$EDITOR ~/.config/zsh/"
-alias reload="source ~/.zshrc && echo 'Zsh reloaded'"
+alias reload="reload_zshrc"
 
 # Platform-specific aliases
 if is_macos; then

@@ -107,7 +107,7 @@ OPTIONS:
     -v, --verbose       Verbose output
     -u, --update        Update existing symlinks only (don't create new ones)
     -s, --skip-packages Skip package installation
-    -t, --test          Run tests after installation
+    -t, --test          Run tests without installing
 
 EXAMPLES:
     $0                  # Full installation
@@ -506,6 +506,9 @@ EOF
 # Main installation function
 main() {
     parse_args "$@"
+    if [[ "$RUN_TESTS" == true && "$DRY_RUN" == false ]]; then
+        exec bash "$DOTFILES_DIR/scripts/test-dotfiles.sh"
+    fi
     
     # Print banner
     cat << 'EOF'
@@ -559,7 +562,6 @@ EOF
     # Validate installation
     if [[ "$DRY_RUN" == false ]]; then
         validate_installation
-        if [[ "$RUN_TESTS" == true ]]; then bash "$DOTFILES_DIR/scripts/test-dotfiles.sh"; fi
     fi
     
     # Final message

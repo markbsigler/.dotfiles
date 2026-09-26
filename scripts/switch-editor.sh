@@ -3,6 +3,7 @@
 # Quick script to switch default editor preference
 
 set -euo pipefail
+readonly SCRIPT_DIR="${0:A:h}"
 
 # Colors
 readonly GREEN='\033[0;32m'
@@ -38,46 +39,49 @@ EXAMPLES:
     $0 current   # Show current settings
 
 NOTES:
-    This modifies ~/.dotfiles/config/zsh/exports.zsh
+    This saves a machine-local preference in ~/.dotfiles/local/editor.zsh
     You'll need to reload your shell or source ~/.zshrc
 EOF
 }
 
 update_exports() {
     local editor="$1"
-    local exports_file="$HOME/.dotfiles/config/zsh/exports.zsh"
-    
-    if [[ ! -f "$exports_file" ]]; then
-        echo "Error: $exports_file not found"
-        exit 1
-    fi
-    
-    # Backup
-    cp "$exports_file" "$exports_file.bak"
-    
+    local editor_command visual_command
     case "$editor" in
         vim)
-            echo "${GREEN}Setting vim as default editor...${NC}"
-            # Move vim check to first position
+            editor_command=vim visual_command=vim
             ;;
         mvim)
-            echo "${GREEN}Setting MacVim as default editor...${NC}"
-            # Move mvim check to first position
+            editor_command='mvim -v' visual_command=mvim
             ;;
         nvim)
-            echo "${GREEN}Setting Neovim as default editor...${NC}"
-            # Move nvim check to first position
+            editor_command=nvim visual_command=nvim
             ;;
         code)
-            echo "${GREEN}Setting VS Code as default editor...${NC}"
-            # Move code check to first position
+            editor_command='code --wait' visual_command='code --wait'
             ;;
         *)
             echo "Unknown editor: $editor"
             exit 1
             ;;
     esac
-    
+    if ! command -v "$editor" >/dev/null 2>&1; then
+        echo "Editor is not installed: $editor" >&2
+        return 1
+    fi
+
+    local repo_dir="${SCRIPT_DIR:h}" preference temporary
+    preference="$repo_dir/local/editor.zsh"
+    [[ -d "$repo_dir/local" && ! -L "$repo_dir/local" ]] || { echo "Unsafe local config directory" >&2; return 1; }
+    umask 077
+    temporary=$(mktemp "$preference.XXXXXX")
+    if ! printf 'export EDITOR=%q\nexport VISUAL=%q\nexport GIT_EDITOR=%q\n' \
+        "$editor_command" "$visual_command" "$editor_command" > "$temporary"; then
+        rm -f -- "$temporary"
+        return 1
+    fi
+    mv -f -- "$temporary" "$preference"
+    echo "${GREEN}Setting $editor as default editor...${NC}"
     echo "${YELLOW}Please reload your shell: source ~/.zshrc${NC}"
 }
 

@@ -60,6 +60,7 @@ json() {
 
 # Reload zsh config
 reload_zshrc() {
+    unset ZSHRC_LOADED
     source ~/.zshrc
     echo "Zsh config reloaded"
 }
@@ -164,16 +165,16 @@ book() {
 }
 
 # Jump to bookmark
-go() {
+bookmark_go() {
     if [ -z "$1" ]; then
-        echo "Usage: go <bookmark-name>"
+        echo "Usage: bookmark_go <bookmark-name>"
         return 1
     fi
     
     if [ -f "$HOME/.bookmarks" ]; then
-        local path=$(grep "^$1:" "$HOME/.bookmarks" | cut -d: -f2)
-        if [ -n "$path" ] && [ -d "$path" ]; then
-            cd "$path"
+        local bookmark_path=$(grep "^$1:" "$HOME/.bookmarks" | cut -d: -f2)
+        if [ -n "$bookmark_path" ] && [ -d "$bookmark_path" ]; then
+            cd "$bookmark_path"
         else
             echo "Bookmark '$1' not found or directory doesn't exist"
         fi
@@ -186,9 +187,10 @@ go() {
 clean_bookmarks() {
     if [ -f "$HOME/.bookmarks" ]; then
         local temp_file=$(mktemp)
-        while IFS=: read -r name path; do
-            if [ -d "$path" ]; then
-                echo "$name:$path" >> "$temp_file"
+        local name bookmark_path
+        while IFS=: read -r name bookmark_path; do
+            if [ -d "$bookmark_path" ]; then
+                echo "$name:$bookmark_path" >> "$temp_file"
             fi
         done < "$HOME/.bookmarks"
         mv "$temp_file" "$HOME/.bookmarks"

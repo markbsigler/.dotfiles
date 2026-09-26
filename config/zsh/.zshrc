@@ -69,6 +69,7 @@ configs=(
 )
 
 for config in "${configs[@]}"; do
+    [[ "$config" == "$ZDOTDIR/atuin.zsh" ]] && ! command -v atuin >/dev/null 2>&1 && continue
     [[ -r "$config" ]] && source "$config"
 done
 
@@ -77,6 +78,7 @@ done
 
 # Load local configurations (machine-specific)
 [[ -f "${ZDOTDIR:A:h:h}/local/local.zsh" ]] && source "${ZDOTDIR:A:h:h}/local/local.zsh"
+[[ -f "${ZDOTDIR:A:h:h}/local/editor.zsh" ]] && source "${ZDOTDIR:A:h:h}/local/editor.zsh"
 
 # Load prompt last to ensure it doesn't get overridden
 [[ -f "$ZDOTDIR/prompt.zsh" ]] && source "$ZDOTDIR/prompt.zsh"
@@ -90,9 +92,6 @@ fi
 # if [[ -n "${ZSH_PROF:-}" ]]; then
 #     zprof
 # fi
-# Added by Antigravity
-add_to_path "/Users/msigler/.antigravity/antigravity/bin"
-
 # Ensure PATH gets deduped on load and before each prompt
 clean_path_once() {
     typeset -f clean_path >/dev/null 2>&1 && clean_path
@@ -100,18 +99,4 @@ clean_path_once() {
 
 clean_path_once
 typeset -ga precmd_functions
-precmd_functions+=clean_path_once
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/msigler/.lmstudio/bin"
-# End of LM Studio CLI section
-
-
-# opencode
-export PATH=/Users/msigler/.opencode/bin:$PATH
-
-# Added by git-ai installer on Sat May  9 13:46:35 EDT 2026
-export PATH="/Users/msigler/.git-ai/bin:$PATH"
-
-# Hermes Agent — ensure ~/.local/bin is on PATH
-export PATH="$HOME/.local/bin:$PATH"
+(( ${precmd_functions[(Ie)clean_path_once]} )) || precmd_functions+=clean_path_once

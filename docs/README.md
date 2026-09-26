@@ -13,7 +13,7 @@ Welcome to the comprehensive documentation for this dotfiles repository. This pa
 ### Configuration & Customization
 
 - **[CUSTOMIZATION.md](CUSTOMIZATION.md)** - Complete guide to customizing your dotfiles
-  - Local configuration (`~/.config/zsh/local.zsh`)
+  - Local configuration (`~/.dotfiles/local/local.zsh`)
   - Adding aliases and functions
   - Platform-specific configuration
   - Best practices
@@ -107,7 +107,7 @@ secret_from_pass GITHUB_TOKEN github/token
 
 ### Customization Quick Start
 
-1. **Machine-specific settings**: Edit `~/.config/zsh/local.zsh`
+1. **Machine-specific settings**: Edit `~/.dotfiles/local/local.zsh`
    ```bash
    # Add custom aliases
    alias myserver="ssh user@server.com"
@@ -138,6 +138,9 @@ $XDG_CACHE_HOME        # ~/.cache
 $XDG_STATE_HOME        # ~/.local/state
 $ZDOTDIR               # ~/.config/zsh
 ```
+
+The installed Zsh directory remains `~/.config/zsh` with a custom
+`XDG_CONFIG_HOME`. A manual `ZDOTDIR` override needs its own config link and backup.
 
 ### Useful Functions
 
@@ -207,7 +210,7 @@ clean_path              # Remove duplicate PATH entries
 
 ### Customizing for Your Machine
 
-1. Edit: `~/.config/zsh/local.zsh`
+1. Edit: `~/.dotfiles/local/local.zsh`
 2. Add your aliases, functions, and environment variables
 3. Reload: `source ~/.zshrc`
 4. See [CUSTOMIZATION.md](CUSTOMIZATION.md) for examples
@@ -305,7 +308,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for comprehensive solutions.
 ### Quality Assurance
 - ✅ All shell scripts pass shellcheck
 - ✅ Comprehensive test suite
-- ✅ Automated CI/CD ready
+- ✅ Local test and lint commands
 - ✅ Cross-platform tested
 - ✅ Pre-commit hooks available (run `scripts/setup-pre-commit.sh`)
 - 🔒 Security audit script for checking secrets and permissions

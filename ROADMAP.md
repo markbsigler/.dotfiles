@@ -6,56 +6,17 @@ Your dotfiles are **production-ready and highly polished** with enterprise-grade
 
 **Current Score: 9.0/10** - Production-ready with enhanced security and workflow tools.
 
-**Remaining Work:** 4 quick wins + 11 nice-to-have enhancements
+**Remaining Work:** 3 quick wins + 11 nice-to-have enhancements
 
 > **Note:** Completed improvements are documented in [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## 🏆 Top 4 Remaining Quick Wins
-
-### 1. Add GitHub Actions CI/CD
-**Effort:** Low | **Impact:** High | **Time:** 30 min
-
-```yaml
-# .github/workflows/test.yml
-name: Test Dotfiles
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install zsh
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt-get update && sudo apt-get install -y zsh
-          fi
-      
-      - name: Run tests
-        run: ./scripts/test-dotfiles.sh
-      
-      - name: Lint shell scripts
-        run: |
-          sudo apt-get install -y shellcheck || brew install shellcheck
-          make lint
-```
-
-**Benefits:**
-- Automatic testing on every push
-- Catches errors before merging
-- Tests on both macOS and Linux
+## 🏆 Top 3 Remaining Quick Wins
 
 ---
 
-### 2. Add Environment Profiles
+### 1. Add Environment Profiles
 **Effort:** Medium | **Impact:** High | **Time:** 40 min
 
 ```bash
@@ -108,7 +69,7 @@ chpwd_functions+=(auto_profile)
 
 ---
 
-### 3. ⚡ Enhance Makefile
+### 2. ⚡ Enhance Makefile
 **Effort:** Low | **Impact:** Low | **Time:** 10 min | **Status:** ⚡ Mostly done
 
 ✅ **Already Completed:**
@@ -144,7 +105,7 @@ profile:
 
 ---
 
-### 4. Add FAQ Documentation
+### 3. Add FAQ Documentation
 **Effort:** Low | **Impact:** Medium | **Time:** 30 min
 
 ```markdown
@@ -174,7 +135,7 @@ ls -lt ~/ | grep dotfiles-backup
 ## Usage
 
 ### Q: How do I add custom aliases?
-Edit `~/.config/zsh/local.zsh` (not tracked in git)
+Edit `~/.dotfiles/local/local.zsh` (not tracked in git)
 
 ### Q: How do I switch between work and personal environments?
 ```bash
@@ -212,12 +173,12 @@ See: `GITHUB_AUTH_SETUP.md`
 ### Q: How do I add a new plugin?
 ```bash
 git clone <plugin-url> ~/.local/share/zsh/plugins/plugin-name
-# Then add to ~/.config/zsh/local.zsh:
+# Then add to ~/.dotfiles/local/local.zsh:
 source ~/.local/share/zsh/plugins/plugin-name/plugin-name.zsh
 ```
 
 ### Q: How do I customize the prompt?
-Edit `~/.config/zsh/local.zsh`:
+Edit `~/.dotfiles/local/local.zsh`:
 ```bash
 PROMPT='%~ $ '
 ```
@@ -244,10 +205,9 @@ cd ~/.dotfiles && make install
 
 | Priority | Effort | Impact | Status | Recommendation |
 |----------|--------|--------|--------|----------------|
-| 1. GitHub Actions CI/CD | Low | High | 🔲 TODO | ⭐⭐⭐ Do First |
-| 2. Environment Profiles | Med | High | 🔲 TODO | ⭐⭐ Do Next |
-| 3. Makefile Enhancements | Low | Low | ⚡ MOSTLY DONE | ⭐ Optional |
-| 4. FAQ Documentation | Low | Med | 🔲 TODO | ⭐ Nice to Have |
+| 1. Environment Profiles | Med | High | 🔲 TODO | ⭐⭐ Do Next |
+| 2. Makefile Enhancements | Low | Low | ⚡ MOSTLY DONE | ⭐ Optional |
+| 3. FAQ Documentation | Low | Med | 🔲 TODO | ⭐ Nice to Have |
 
 **Legend:** ✅ Done (see CHANGELOG.md) | ⚡ Partial | 🔲 TODO
 
@@ -255,20 +215,16 @@ cd ~/.dotfiles && make install
 
 ## 🚀 Quick Start (Next Steps)
 
-### Remaining Work (70 minutes total)
+### Remaining Work
 
 ```bash
-# 1. Add GitHub Actions (30 min) - ⭐⭐⭐ Top Priority
-mkdir -p .github/workflows
-# Create .github/workflows/test.yml (see section 1 above)
-
-# 2. Add Environment Profiles (40 min) - ⭐⭐ High Impact
+# 1. Add Environment Profiles (40 min)
 # Create config/zsh/profiles.zsh (see section 2 above)
 
-# 3. Complete Makefile (optional, 10 min) - ⭐ Nice to Have
+# 2. Complete Makefile (optional, 10 min)
 # Add sync target (see section 3 above)
 
-# 4. Add FAQ Documentation (30 min) - ⭐ Nice to Have
+# 3. Add FAQ Documentation (30 min)
 # Create docs/FAQ.md (see section 4 above)
 
 # Test everything
@@ -276,10 +232,6 @@ make test
 make lint
 make security
 
-# Commit and push
-git add .
-git commit -m "feat: add CI/CD and environment profiles"
-git push
 ```
 
 ---
@@ -298,7 +250,6 @@ See [CHANGELOG.md](CHANGELOG.md) for details on completed work:
 - Script consolidation
 
 ### Phase 1 (This Week): Quick Wins Remaining
-- 🔲 GitHub Actions CI/CD
 - 🔲 Environment profiles  
 - ⚡ Complete Makefile enhancements (optional)
 - 🔲 FAQ documentation
@@ -337,9 +288,9 @@ See [CHANGELOG.md](CHANGELOG.md) for details on completed work:
 - ✅ Quality assurance (pre-commit hooks)
 - ✅ Modern workflow tools (tmux, SSH templates)
 
-**Remaining Work:** 4 quick wins to reach **10/10 perfection**!
+**Remaining Work:** 3 quick wins.
 
-Focus on GitHub Actions and environment profiles for the highest impact.
+Focus on environment profiles if they are useful for this checkout.
 
 ---
 

@@ -98,6 +98,3 @@ fi
 # echo "✓ .zprofile loaded for login shell"
 # echo "  OS Type: $OSTYPE"
 # echo "  PATH: $PATH"
-
-# Hermes Agent — ensure ~/.local/bin is on PATH
-export PATH="$HOME/.local/bin:$PATH"

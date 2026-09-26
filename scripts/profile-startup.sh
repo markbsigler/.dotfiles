@@ -210,8 +210,8 @@ profile_detailed() {
     info "Running detailed profiling..."
     echo
     
-    # Run zsh with zprof enabled
-    "$SHELL_PATH" -i -c 'zmodload zsh/zprof && zprof' 2>&1 | grep -v "^$"
+    # Load zprof from .zshenv before interactive startup begins.
+    DOTFILES_ZPROF=1 "$SHELL_PATH" -i -c 'zprof' 2>&1 | grep -v "^$"
     
     echo
     info "Interpretation:"

@@ -10,7 +10,8 @@ Preserve existing user edits and never treat the checkout as a sandbox.
   resolved from the script location. `scripts/lib/backup.sh` owns backup format.
 - `config/zsh/.zshrc` sources fragments in an explicit order. Keep
   `os-detection.zsh` first. `local/local.zsh` in the checkout is sourced once after
-  shared config; it is ignored. The tracked `config/zsh/local.zsh` is inactive.
+  shared config; it is ignored. `local/editor.zsh` is a generated ignored editor
+  preference loaded afterward. The tracked `config/zsh/local.zsh` is inactive.
 - `.zshenv` is read-only; directory creation belongs in interactive setup.
   Missing plugins are skipped, never downloaded during startup.
 - Git uses both `~/.gitconfig` and `~/.config/git` links. Optional machine-specific
@@ -38,9 +39,8 @@ Preserve existing user edits and never treat the checkout as a sandbox.
 | `make perf` | Reports unavailable isolated benchmark; no live startup test. |
 
 Tests require Bash, Zsh, Vim, Git, jq, ripgrep and ShellCheck. Run the complete
-runner under `/bin/bash` and Bash 5 on macOS for portable changes. CI defines
-macOS Bash 3.2/5 and Ubuntu Bash 5 jobs in `.github/workflows/validate.yml`.
-Do not claim Linux coverage solely from local macOS runs. Pre-commit hooks are
+runner under `/bin/bash` and Bash 5 on macOS for portable changes. There is no
+GitHub CI; do not claim Linux coverage solely from local macOS runs. Pre-commit hooks are
 checkout-relative; installation is a separate explicit action.
 
 ## Security Boundaries

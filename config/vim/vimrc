@@ -231,6 +231,7 @@ nnoremap <leader>to :tabonly<CR>
 " -----------------------------------------------------------------------------
 " PLUGIN MANAGEMENT (VIM-PLUG)
 " -----------------------------------------------------------------------------
+if !empty(globpath(&runtimepath, 'autoload/plug.vim'))
 call plug#begin('~/.vim/plugged')
 
 " Status line enhancement
@@ -274,6 +275,7 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'preservim/tagbar'
 
 call plug#end()
+endif
 
 " -----------------------------------------------------------------------------
 " PLUGIN CONFIGURATION

@@ -7,6 +7,7 @@ install.log
 
 # Local configurations (machine-specific)
 local/local.zsh
+local/editor.zsh
 local/local.exports
 config/zsh/local.zsh
 config/mcpm/servers.local.json

@@ -18,7 +18,7 @@ usage() {
         '--quick: required files and all shell syntax (no configuration execution).' \
         '--zsh: syntax of Zsh configs and scripts, including hidden startup files.' \
         '--scripts: syntax of shell scripts, using their declared interpreter.' \
-        '--vim: isolated vimrc load with plugin installation disabled.' \
+        '--vim: isolated Vim and, when available, Neovim startup without installed plugins.' \
         '--lint: ShellCheck at warning severity; required, and excludes Zsh.' \
         '--integration: isolated safety/security suites and OS detection only.' \
         '--performance: report benchmark availability; never start a live shell.'
@@ -189,6 +189,15 @@ test_vim() {
         cat "$TEST_ROOT/vim-home/errors" >&2
     fi
     check 'isolated vimrc (stubbed vim-plug; restricted mode)' test "$result" -eq 0
+
+    if executable="$(type -P nvim)"; then
+        mkdir -p "$TEST_ROOT/nvim-home" || { fail 'Neovim fixture setup'; return; }
+        check 'isolated Neovim startup (no plugins)' isolated "$TEST_ROOT/nvim-home" \
+            "$executable" --headless --noplugin -u "$REPO_DIR/config/nvim/init.vim" -i NONE -n '+qa!'
+    else
+        SKIPPED=$((SKIPPED + 1))
+        printf '%s\n' 'SKIP isolated Neovim startup: nvim not installed'
+    fi
 }
 
 test_integration() {

@@ -197,7 +197,7 @@ Current: Basic tmux config exists
 Current: Basic shell syntax testing
 
 **Recommendations**:
-- [ ] Add shellcheck to CI/CD
+- [ ] Run ShellCheck locally before sharing changes
 - [ ] Test vim/nvim configs on fresh install
 - [ ] Add integration tests for all major workflows
 - [ ] Test on different OS versions

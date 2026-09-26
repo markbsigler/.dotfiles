@@ -27,11 +27,26 @@ install_nerd_font_linux() {
     info "Installing Agave Nerd Font..."
     local version="3.1.1"
     local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${version}/Agave.zip"
-    mkdir -p "$HOME/.local/share/fonts"
-    wget -q -O /tmp/Agave.zip "$url"
-    unzip -oq /tmp/Agave.zip -d "$HOME/.local/share/fonts/AgaveNerdFont"
-    fc-cache -f >/dev/null 2>&1 || true
-    rm -f /tmp/Agave.zip
+    local staging font_dir
+    staging=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-fonts.XXXXXX")
+    font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/AgaveNerdFont"
+    if wget -q -O "$staging/Agave.zip" "$url" && unzip -oq "$staging/Agave.zip" '*.ttf' -d "$staging/fonts"; then
+        local fonts=("$staging/fonts/"*.ttf)
+        if [[ -f "${fonts[0]}" ]]; then
+            mkdir -p "$font_dir"
+            cp "${fonts[@]}" "$font_dir/"
+            fc-cache -f "$font_dir" >/dev/null 2>&1 || true
+        else
+            warning "Agave archive contained no TrueType fonts"
+        fi
+    else
+        warning "Agave Nerd Font download failed"
+    fi
+    rm -rf -- "$staging"
+}
+
+install_nerd_font_windows() {
+    warning "Please manually install a Nerd Font (e.g., Agave Nerd Font) from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences."
 }
 
 # Colors for output
@@ -318,9 +333,6 @@ install_packages_ubuntu() {
     install_nerd_font_linux
     
     success "Ubuntu package installation completed!"
-install_nerd_font_windows() {
-    warning "Please manually install a Nerd Font (e.g., Agave Nerd Font) from https://www.nerdfonts.com/font-downloads and set it in your terminal preferences."
-}
 }
 
 install_modern_tools_ubuntu() {
@@ -331,50 +343,29 @@ install_modern_tools_ubuntu() {
     
     # Install bat (better cat)
     if ! command_exists bat && ! command_exists batcat; then
-        if command_exists batcat; then
-            ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"
-        else
-            local bat_version="0.24.0"
-            local bat_url="https://github.com/sharkdp/bat/releases/download/v${bat_version}/bat_${bat_version}_amd64.deb"
-            wget -O /tmp/bat.deb "$bat_url"
-            sudo dpkg -i /tmp/bat.deb
-            rm /tmp/bat.deb
-        fi
+        sudo apt install -y bat
     fi
     
     # Install fd (better find)
     if ! command_exists fd && ! command_exists fdfind; then
-        local fd_version="8.7.1"
-        local fd_url="https://github.com/sharkdp/fd/releases/download/v${fd_version}/fd_${fd_version}_amd64.deb"
-        wget -O /tmp/fd.deb "$fd_url"
-        sudo dpkg -i /tmp/fd.deb
-        rm /tmp/fd.deb
-        # Create fd symlink if only fdfind exists
-    elif command_exists fdfind && ! command_exists fd; then
+        sudo apt install -y fd-find
+    fi
+    if command_exists fdfind && ! command_exists fd; then
         ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
     fi
     
     # Install ripgrep (better grep)
     if ! command_exists rg; then
-        local rg_version="13.0.0"
-        local rg_url="https://github.com/BurntSushi/ripgrep/releases/download/${rg_version}/ripgrep_${rg_version}_amd64.deb"
-        wget -O /tmp/ripgrep.deb "$rg_url"
-        sudo dpkg -i /tmp/ripgrep.deb
-        rm /tmp/ripgrep.deb
+        sudo apt install -y ripgrep
     fi
     
-    # Install eza (better ls) - from GitHub releases
+    # Install eza from configured apt repositories when available.
     if ! command_exists eza; then
-        local eza_version="0.18.2"
-        local arch
-        arch="$(detect_arch)"
-        [[ "$arch" == "amd64" ]] && arch="x86_64"
-        local eza_url="https://github.com/eza-community/eza/releases/download/v${eza_version}/eza_${arch}-unknown-linux-gnu.tar.gz"
-        wget -O /tmp/eza.tar.gz "$eza_url"
-        tar -xzf /tmp/eza.tar.gz -C /tmp
-        mv /tmp/eza "$HOME/.local/bin/"
-        chmod +x "$HOME/.local/bin/eza"
-        rm /tmp/eza.tar.gz
+        if apt-cache show eza >/dev/null 2>&1; then
+            sudo apt install -y eza
+        else
+            warning "eza is not available from the configured apt repositories"
+        fi
     fi
     
     # Install fzf (fuzzy finder)
@@ -474,9 +465,6 @@ install_packages_fedora() {
 install_packages_arch() {
     info "Installing Arch Linux packages..."
     
-    # Update package database
-    sudo pacman -Sy
-    
     # Core packages
     local packages=(
         "git"
@@ -509,7 +497,7 @@ install_packages_arch() {
         "eza"
     )
     
-    sudo pacman -S --needed "${packages[@]}"
+    sudo pacman -Syu --needed "${packages[@]}"
     
     success "Arch Linux package installation completed!"
 }

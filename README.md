@@ -57,8 +57,8 @@ Use a Nerd Font for icons. Default: Agave Nerd Font.
 fallback requires curl and unzip (plus fontconfig on Linux), uses a private
 temporary directory, and fails if download, extraction or font-cache refresh
 fails. The pinned archive is downloaded over HTTPS without an independent
-checksum check. The separate package/bootstrap helpers still contain legacy
-download paths and host changes; they are not covered by this target's safeguards.
+checksum check. Package/bootstrap helpers also run other network installers
+and make live host changes; they are not covered by this target's safeguards.
 
 ## 🛠️ What Gets Installed
 
@@ -72,13 +72,14 @@ download paths and host changes; they are not covered by this target's safeguard
 | Category | macOS (Homebrew) | Ubuntu/Debian (APT) | Fedora/CentOS (DNF/YUM) | Arch/Manjaro (Pacman) |
 |---|---|---|---|---|
 | Core | git, zsh, vim, neovim, curl, wget | git, zsh, vim, neovim, curl, wget | git, zsh, vim, neovim, curl, wget | git, zsh, vim, neovim, curl, wget |
-| Modern CLI | bat, eza, fd, fzf, ripgrep, jq, tree, htop, ncdu, tldr | bat, eza, fd/fdfind, fzf, ripgrep, jq, tree, htop, ncdu, tldr | bat, eza, fd-find, fzf, ripgrep, jq, tree, htop, ncdu, tldr | bat, eza, fd, fzf, ripgrep, jq, tree, htop, ncdu, tldr |
+| Modern CLI | bat, eza, fd, fzf, ripgrep, jq, tree, htop, ncdu, tldr | bat, fd/fdfind, fzf, ripgrep, jq, tree, htop, ncdu, tldr; eza if available | bat, eza, fd-find, fzf, ripgrep, jq, tree, htop, ncdu, tldr | bat, eza, fd, fzf, ripgrep, jq, tree, htop, ncdu, tldr |
 | Dev Tools | shellcheck, gh, httpie | shellcheck, gh, httpie | shellcheck, gh, httpie | shellcheck, github-cli (gh), httpie |
 | Languages | node, python@3.11, go, rust, ruby, temurin17 | nodejs, npm, python3, python3-pip, golang-go, rustup-init/rust, ruby, openjdk-17-jdk | nodejs, npm, python3, python3-pip, golang, rustup, ruby, java-17-openjdk-devel | nodejs, npm, python, python-pip, go, rustup, ruby, jdk17-openjdk |
 | Optional | docker, tmux, screen | docker.io, tmux, screen | moby-engine/docker, tmux, screen | docker, tmux, screen |
 
 Notes:
 - Ubuntu/Debian: `bat` may be `batcat`; `fd` may be `fdfind` (a symlink is created to `fd`).
+- Ubuntu/Debian: `eza` is installed only when available from configured APT repositories.
 - Fedora: `fd-find` is the package name for `fd`.
 - Package selections target Java 17. Availability depends on the OS and package repositories.
 
@@ -191,8 +192,8 @@ operations. Do not run every target as a smoke-test loop on your real HOME.
 - Tests require Make, Bash, Zsh, Vim, Git, jq, ripgrep and ShellCheck. Missing tools fail.
 - Recovery and security regressions use temporary homes and dummy credentials.
 - ShellCheck excludes Zsh; Zsh syntax is validated separately.
-- CI defines macOS Bash 3.2/5 and Linux Bash 5 jobs. Local macOS checks do not
-  establish Linux or authenticated MCP compatibility.
+- There is no GitHub CI. Run checks locally; macOS checks do not establish
+  Linux or authenticated MCP compatibility.
 - The secret scanner does not inspect Git history, ignored untracked files or
   live permissions; see [docs/SECRETS.md](docs/SECRETS.md) for its limits.
 
@@ -274,11 +275,14 @@ Follows the XDG Base Directory specification for clean configuration management:
 - **State**: `~/.local/state/` - History, logs, state files
 
 Managed via `~/.zshenv` (loaded first for all shell invocations) and `~/.zprofile` (login shells).
+The installer and backups use `~/.config/zsh` even when `XDG_CONFIG_HOME` is
+customized. An explicit `ZDOTDIR` override must be linked and backed up manually.
 
 ## 🎯 Customization
 
 - `local/local.zsh` in this checkout for ignored machine-specific settings,
   sourced once after shared configuration
+- `scripts/switch-editor.sh` for an ignored `local/editor.zsh` editor preference
 - `~/.gitconfig.local` for private Git overrides, including optional credential
   manager or tracing settings
 - Add functions to `config/zsh/functions.zsh`

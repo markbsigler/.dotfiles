@@ -96,7 +96,7 @@ git config --global core.editor
 - [ ] Enhance tmux configuration with vim bindings
 - [ ] Add vim/macvim aliases to aliases.zsh
 - [ ] Implement backup rotation strategy
-- [ ] Add shellcheck to CI/CD
+- [ ] Run ShellCheck locally before sharing changes
 
 ### Low Priority
 - [ ] Create CONTRIBUTING.md
