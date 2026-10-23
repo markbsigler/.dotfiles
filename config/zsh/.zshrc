@@ -100,3 +100,6 @@ clean_path_once() {
 clean_path_once
 typeset -ga precmd_functions
 (( ${precmd_functions[(Ie)clean_path_once]} )) || precmd_functions+=clean_path_once
+
+# Added by git-ai installer on Sun Oct  4 11:14:56 2026
+export PATH="/Users/msigler/.git-ai/bin:$PATH"

@@ -147,3 +147,9 @@
 
 [include]
 	path = ~/.gitconfig.local
+[trace2]
+	eventTarget = af_unix:stream:/Users/msigler/.git-ai/internal/daemon/trace2.sock
+	eventNesting = 0
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
