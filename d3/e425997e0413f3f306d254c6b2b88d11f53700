@@ -1,0 +1,16 @@
+config/git/gitconfig
+  h_85ea3c1869612c 150-155
+config/zsh/.zshrc
+  h_85ea3c1869612c 103-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d3e425997e0413f3f306d254c6b2b88d11f53700",
+  "prompts": {},
+  "humans": {
+    "h_85ea3c1869612c": {
+      "author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
